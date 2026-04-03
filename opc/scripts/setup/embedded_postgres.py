@@ -17,12 +17,14 @@ from typing import Any
 from urllib.parse import quote_plus
 
 
-def start_embedded_postgres(pgdata: Path) -> dict[str, Any]:
+def start_embedded_postgres(pgdata: Path, venv_path: Path | None = None) -> dict[str, Any]:
     """Start embedded postgres server using pgserver.
 
     Args:
         pgdata: Directory to store postgres data files.
                 Will be created if it doesn't exist.
+        venv_path: Optional path to venv with pgserver installed.
+                   If not provided, tries to import pgserver directly.
 
     Returns:
         dict with keys:
@@ -31,26 +33,52 @@ def start_embedded_postgres(pgdata: Path) -> dict[str, Any]:
             - error: str (if failed)
             - server: PostgresServer instance (for cleanup)
     """
+    import sys
+
+    # Determine Python executable to use
+    if venv_path is not None:
+        if sys.platform == "win32":
+            python_exe = venv_path / "Scripts" / "python.exe"
+        else:
+            python_exe = venv_path / "bin" / "python"
+    else:
+        python_exe = sys.executable
+
+    # Build script to start pgserver and get URI
+    start_script = f"""
+import sys
+sys.path.insert(0, '{venv_path}/lib/python3.12/site-packages')
+from pgserver import get_server
+server = get_server('{pgdata}')
+print(server.get_uri())
+"""
+
+    import subprocess
+
     try:
-        import pgserver
-    except ImportError:
+        proc = subprocess.Popen(
+            [str(python_exe), "-c", start_script],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        stdout, stderr = proc.communicate(timeout=30)
+
+        if proc.returncode == 0:
+            uri = stdout.decode().strip()
+            return {
+                "success": True,
+                "uri": uri,
+            }
+        else:
+            error_msg = stderr.decode().strip() if stderr else "Unknown error"
+            return {
+                "success": False,
+                "error": f"Failed to start pgserver: {error_msg[:200]}",
+            }
+    except subprocess.TimeoutExpired:
         return {
             "success": False,
-            "error": "pgserver not installed. Install with: pip install pgserver",
-        }
-
-    try:
-        # Ensure pgdata directory exists
-        pgdata.mkdir(parents=True, exist_ok=True)
-
-        # Start server (pgserver handles init if needed)
-        server = pgserver.get_server(str(pgdata))
-        uri = server.get_uri()
-
-        return {
-            "success": True,
-            "uri": uri,
-            "server": server,
+            "error": "pgserver start timed out",
         }
     except Exception as e:
         return {
@@ -260,7 +288,9 @@ async def setup_embedded_environment() -> dict[str, Any]:
         if venv_path.exists() and python_exe.exists():
             # Verify pgserver is installed
             proc = await asyncio.create_subprocess_exec(
-                str(python_exe), "-c", "import pgserver",
+                str(python_exe),
+                "-c",
+                "import pgserver",
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
@@ -270,7 +300,11 @@ async def setup_embedded_environment() -> dict[str, Any]:
 
         # Create venv with Python 3.12
         proc = await asyncio.create_subprocess_exec(
-            "uv", "venv", str(venv_path), "--python", "3.12",
+            "uv",
+            "venv",
+            str(venv_path),
+            "--python",
+            "3.12",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -280,8 +314,13 @@ async def setup_embedded_environment() -> dict[str, Any]:
 
         # Install pgserver and psycopg2
         proc = await asyncio.create_subprocess_exec(
-            "uv", "pip", "install", "pgserver", "psycopg2-binary",
-            "--python", str(python_exe),
+            "uv",
+            "pip",
+            "install",
+            "pgserver",
+            "psycopg2-binary",
+            "--python",
+            str(python_exe),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
