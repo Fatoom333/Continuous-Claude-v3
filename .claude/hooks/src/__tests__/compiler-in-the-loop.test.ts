@@ -1,6 +1,6 @@
 /**
  * Tests for compiler-in-the-loop.ts
- * 
+ *
  * Test coverage:
  * - Lean compiler execution
  * - Sorry extraction from Lean code
@@ -46,14 +46,16 @@ import {
 } from "../compiler-in-the-loop.js";
 
 // Helper to create mock stdin input
-function createMockInput(overrides: Partial<{
-  session_id: string;
-  hook_event_name: string;
-  tool_name: string;
-  tool_input: {file_path?: string; content?: string};
-  tool_response: {success?: boolean; filePath?: string};
-  cwd: string;
-}> = {}): string {
+function createMockInput(
+  overrides: Partial<{
+    session_id: string;
+    hook_event_name: string;
+    tool_name: string;
+    tool_input: { file_path?: string; content?: string };
+    tool_response: { success?: boolean; filePath?: string };
+    cwd: string;
+  }> = {},
+): string {
   return JSON.stringify({
     session_id: "test-session",
     hook_event_name: "PostToolUse",
@@ -99,9 +101,11 @@ describe("runLeanCompiler", () => {
 
   it("uses lake build when lakefile exists", () => {
     mockExecSync.mockReturnValue("Build completed");
-    (existsSync as ReturnType<typeof vi.fn>).mockImplementation((path: string) => {
-      return path.includes("lakefile");
-    });
+    (existsSync as ReturnType<typeof vi.fn>).mockImplementation(
+      (path: string) => {
+        return path.includes("lakefile");
+      },
+    );
 
     runLeanCompiler("/test/file.lean", "/test");
 
@@ -161,7 +165,7 @@ describe("extractSorries", () => {
     vi.clearAllMocks();
   });
 
-it("extracts sorry placeholders from Lean code", () => {
+  it("extracts sorry placeholders from Lean code", () => {
     (existsSync as ReturnType<typeof vi.fn>).mockReturnValue(true);
     // Note: Line numbers are1-indexed. First non-empty line after leading newline is line 2
     (readFileSync as ReturnType<typeof vi.fn>).mockReturnValue(`
@@ -303,7 +307,9 @@ describe("getGoedelSuggestions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (existsSync as ReturnType<typeof vi.fn>).mockReturnValue(true);
-    (readFileSync as ReturnType<typeof vi.fn>).mockReturnValue("theorem foo : P := by sorry");
+    (readFileSync as ReturnType<typeof vi.fn>).mockReturnValue(
+      "theorem foo : P := by sorry",
+    );
   });
 
   it("returns null when GOEDEL_ENABLED is false", async () => {
@@ -319,7 +325,8 @@ describe("getGoedelSuggestions", () => {
 
   it("returns suggestion when LMStudio responds", async () => {
     // Mock the checkLMStudioAvailable to return true first, then the actual call
-    mockFetch = vi.fn()
+    mockFetch = vi
+      .fn()
       .mockResolvedValueOnce({ ok: true }) // For checkLMStudioAvailable
       .mockResolvedValueOnce({
         ok: true,
@@ -327,7 +334,11 @@ describe("getGoedelSuggestions", () => {
       }); // For getGoedelSuggestions
     global.fetch = mockFetch;
 
-    const result = await getGoedelSuggestions("theorem foo : P := by sorry", "", ["Line 2: sorry"]);
+    const result = await getGoedelSuggestions(
+      "theorem foo : P := by sorry",
+      "",
+      ["Line 2: sorry"],
+    );
 
     // Check parsing of response
     if (result.suggestion !== null) {
@@ -340,7 +351,9 @@ describe("getGoedelSuggestions", () => {
     mockFetch = vi.fn().mockRejectedValue(new Error("Connection refused"));
     global.fetch = mockFetch;
 
-    const result = await getGoedelSuggestions("code", "errors", ["Line 1: sorry"]);
+    const result = await getGoedelSuggestions("code", "errors", [
+      "Line 1: sorry",
+    ]);
 
     expect(result.suggestion).toBeNull();
     // Result can be either unavailable message or null (depending on caching)
@@ -468,7 +481,9 @@ theorem foo : P := by
 
   it("handles concurrent sorry keywords on same line", () => {
     (existsSync as ReturnType<typeof vi.fn>).mockReturnValue(true);
-    (readFileSync as ReturnType<typeof vi.fn>).mockReturnValue("sorry sorry sorry");
+    (readFileSync as ReturnType<typeof vi.fn>).mockReturnValue(
+      "sorry sorry sorry",
+    );
 
     const sorries = extractSorries("/test/file.lean");
 

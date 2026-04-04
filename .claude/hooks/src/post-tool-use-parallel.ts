@@ -158,7 +158,9 @@ async function executeParallel(stdinData: string): Promise<void> {
 
   // Log timing for observability
   if (process.env.PARALLEL_HOOKS_DEBUG === "true") {
-    console.error(`[PARALLEL] Executed ${results.length} hooks in ${totalDuration}ms`);
+    console.error(
+      `[PARALLEL] Executed ${results.length} hooks in ${totalDuration}ms`,
+    );
     for (const result of results) {
       console.error(
         `[PARALLEL] ${result.name}: ${result.duration}ms (${result.success ? "OK" : "FAIL"})`,
@@ -184,9 +186,7 @@ async function executeParallel(stdinData: string): Promise<void> {
   // If any hook blocked, return block decision with all error messages
   if (blockedHooks.length > 0) {
     const errorMessages = results
-      .filter(
-        (r) => !r.success || blockedHooks.includes(r.name),
-      )
+      .filter((r) => !r.success || blockedHooks.includes(r.name))
       .map((r) => {
         try {
           const parsed = JSON.parse(r.output);

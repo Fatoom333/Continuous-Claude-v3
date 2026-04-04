@@ -14,13 +14,11 @@ Configuration:
 - half_open_max_calls: Max test calls in HALF_OPEN state (default: 3)
 """
 
-import asyncio
 import logging
 import time
 from dataclasses import dataclass, field
 from enum import Enum
 from threading import Lock
-from typing import Callable
 
 logger = logging.getLogger("mcp_execution.circuit_breaker")
 

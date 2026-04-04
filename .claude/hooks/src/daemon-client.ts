@@ -120,7 +120,8 @@ const QUERY_TIMEOUT = 3000;
  * In-memory cache for daemon status.
  * Avoids repeated PID/spawnSync checks within a session.
  */
-let daemonStatusCache: Map<string, { running: boolean; timestamp: number }> = new Map();
+let daemonStatusCache: Map<string, { running: boolean; timestamp: number }> =
+  new Map();
 const CACHE_TTL_MS = 60_000; // 1 minute TTL
 
 /**
@@ -481,7 +482,8 @@ export function tryStartDaemon(projectDir: string): boolean {
           /* spin */
         }
       }
-      const running = isDaemonProcessRunning(projectDir) || isDaemonReachable(projectDir);
+      const running =
+        isDaemonProcessRunning(projectDir) || isDaemonReachable(projectDir);
       if (running) cacheDaemonStatus(projectDir, true);
       return running;
     }

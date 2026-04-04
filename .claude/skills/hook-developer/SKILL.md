@@ -518,7 +518,7 @@ MCP tools use pattern `mcp__<server>__<tool>`:
 
 | Variable             | Description                              |
 | -------------------- | ---------------------------------------- |
-| `CLAUDE_CC_DIR` | Absolute path to project root            |
+| `CLAUDE_CC_DIR`      | Absolute path to project root            |
 | `CLAUDE_CODE_REMOTE` | "true" if remote/web, empty if local CLI |
 
 ### SessionStart Only

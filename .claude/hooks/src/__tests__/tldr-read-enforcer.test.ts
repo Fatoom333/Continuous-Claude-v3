@@ -23,7 +23,9 @@ import { queryDaemonSync, trackHookActivitySync } from "../daemon-client";
 
 // Type the mocked functions
 const mockQueryDaemonSync = queryDaemonSync as ReturnType<typeof vi.fn>;
-const mockTrackHookActivitySync = trackHookActivitySync as ReturnType<typeof vi.fn>;
+const mockTrackHookActivitySync = trackHookActivitySync as ReturnType<
+  typeof vi.fn
+>;
 
 // Extract testable functions from tldr-read-enforcer
 // We'll test them by simulating hook behavior
@@ -251,7 +253,11 @@ describe("TLDR Read Enforcer Hook", () => {
 
   describe("TLDR Mode Selection", () => {
     it("should choose context mode when target from search router", () => {
-      const result = chooseTldrMode("myFunction", ["ast"], "function: myFunction");
+      const result = chooseTldrMode(
+        "myFunction",
+        ["ast"],
+        "function: myFunction",
+      );
       expect(result.mode).toBe("context");
       expect(result.reason).toContain("search");
     });
@@ -275,7 +281,11 @@ describe("TLDR Read Enforcer Hook", () => {
 
     it("should prefer search context over default", () => {
       const defaultResult = chooseTldrMode(null, ["ast"], "default");
-      const searchResult = chooseTldrMode("target", ["ast"], "function: target");
+      const searchResult = chooseTldrMode(
+        "target",
+        ["ast"],
+        "function: target",
+      );
 
       expect(defaultResult.mode).toBe("structure");
       expect(searchResult.mode).toBe("context");
@@ -292,7 +302,12 @@ describe("TLDR Read Enforcer Hook", () => {
         status: "ok",
         result: {
           functions: [
-            { name: "main", params: [], line_number: 1, docstring: "Entry point" },
+            {
+              name: "main",
+              params: [],
+              line_number: 1,
+              docstring: "Entry point",
+            },
           ],
           classes: [],
         },
@@ -316,7 +331,10 @@ describe("TLDR Read Enforcer Hook", () => {
         error: "Daemon not running",
       });
 
-      const result = queryDaemonSync({ cmd: "extract", file: "test.py" }, "/project");
+      const result = queryDaemonSync(
+        { cmd: "extract", file: "test.py" },
+        "/project",
+      );
 
       expect(result.status).toBe("error");
       expect(result.error).toBeDefined();
@@ -372,7 +390,8 @@ describe("TLDR Read Enforcer Hook", () => {
       };
 
       // Non-code files bypass TLDR
-      const shouldBypass = !isCodeFile("README.md") || isAllowedFile("README.md");
+      const shouldBypass =
+        !isCodeFile("README.md") || isAllowedFile("README.md");
       expect(shouldBypass).toBe(true);
     });
 
@@ -403,7 +422,11 @@ describe("TLDR Read Enforcer Hook", () => {
     });
 
     it("should prefer context mode when target is from search", () => {
-      const result = chooseTldrMode("targetFunction", ["ast"], "function: targetFunction");
+      const result = chooseTldrMode(
+        "targetFunction",
+        ["ast"],
+        "function: targetFunction",
+      );
       expect(result.mode).toBe("context");
       expect(result.reason).toContain("targetFunction");
     });

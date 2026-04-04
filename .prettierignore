@@ -1,0 +1,57 @@
+# Compiled/dist files
+*.mjs
+*.js
+!src/**/*.js
+
+# Generated files
+*.generated.*
+
+# Test fixtures and snapshots
+__snapshots__/
+*.snap
+
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Python files
+*.py
+*.pyi
+
+# Markdown files with special formatting
+docs/_internal/
+
+# Archive directories
+archive/
+*.archive/
+
+# Test compiled files
+__tests__/*.test.js
+
+# Config files
+*.json.bak
+*.yaml.bak
+
+# Lean files
+*.lean
+
+# Cache directories
+.cache/
+.tldr/
+.qlty/
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+
+# Environment files
+.env
+.env.*
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo

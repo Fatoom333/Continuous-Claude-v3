@@ -103,7 +103,7 @@ function groupByPriority(skills: MatchedSkill[]): {
   high: MatchedSkill[];
   medium: MatchedSkill[];
   low: MatchedSkill[];
-}{
+} {
   return {
     critical: skills.filter((s) => s.config.priority === "critical"),
     high: skills.filter((s) => s.config.priority === "high"),
@@ -200,7 +200,9 @@ describe("Skill Activation Prompt Hook", () => {
 
       expect(matched.length).toBeGreaterThan(0);
       expect(matched.some((m) => m.name === "commit")).toBe(true);
-      expect(matched.find((m) => m.name === "commit")?.matchType).toBe("keyword");
+      expect(matched.find((m) => m.name === "commit")?.matchType).toBe(
+        "keyword",
+      );
     });
 
     it("should detect ambiguous keyword usage", () => {
@@ -234,7 +236,9 @@ describe("Skill Activation Prompt Hook", () => {
 
       expect(matched.length).toBeGreaterThan(0);
       expect(matched.some((m) => m.name === "commit")).toBe(true);
-      expect(matched.find((m) => m.name === "commit")?.matchType).toBe("intent");
+      expect(matched.find((m) => m.name === "commit")?.matchType).toBe(
+        "intent",
+      );
     });
 
     it("should not require validation for intent matches", () => {
@@ -276,10 +280,34 @@ describe("Skill Activation Prompt Hook", () => {
   describe("Priority Grouping", () => {
     it("should group skills by priority level", () => {
       const skills: MatchedSkill[] = [
-        { name: "math-router", matchType: "keyword", config: { priority: "critical", type: "domain", enforcement: "block" } },
-        { name: "commit", matchType: "keyword", config: { priority: "high", type: "domain", enforcement: "suggest" } },
-        { name: "build", matchType: "keyword", config: { priority: "medium", type: "workflow", enforcement: "suggest" } },
-        { name: "optional", matchType: "keyword", config: { priority: "low", type: "domain", enforcement: "suggest" } },
+        {
+          name: "math-router",
+          matchType: "keyword",
+          config: {
+            priority: "critical",
+            type: "domain",
+            enforcement: "block",
+          },
+        },
+        {
+          name: "commit",
+          matchType: "keyword",
+          config: { priority: "high", type: "domain", enforcement: "suggest" },
+        },
+        {
+          name: "build",
+          matchType: "keyword",
+          config: {
+            priority: "medium",
+            type: "workflow",
+            enforcement: "suggest",
+          },
+        },
+        {
+          name: "optional",
+          matchType: "keyword",
+          config: { priority: "low", type: "domain", enforcement: "suggest" },
+        },
       ];
 
       const grouped = groupByPriority(skills);
@@ -301,21 +329,41 @@ describe("Skill Activation Prompt Hook", () => {
   describe("Blocking Behavior", () => {
     it("should identify blocking skills with enforcement: block", () => {
       const skills: MatchedSkill[] = [
-        { name: "math-router", matchType: "keyword", config: { enforcement: "block", priority: "critical", type: "domain" } },
-        { name: "commit", matchType: "keyword", config: { enforcement: "suggest", priority: "high", type: "domain" } },
+        {
+          name: "math-router",
+          matchType: "keyword",
+          config: {
+            enforcement: "block",
+            priority: "critical",
+            type: "domain",
+          },
+        },
+        {
+          name: "commit",
+          matchType: "keyword",
+          config: { enforcement: "suggest", priority: "high", type: "domain" },
+        },
       ];
 
-      const blockingSkills = skills.filter((s) => s.config.enforcement === "block");
+      const blockingSkills = skills.filter(
+        (s) => s.config.enforcement === "block",
+      );
       expect(blockingSkills).toHaveLength(1);
       expect(blockingSkills[0].name).toBe("math-router");
     });
 
     it("should not block on suggest skills", () => {
       const skills: MatchedSkill[] = [
-        { name: "commit", matchType: "keyword", config: { enforcement: "suggest", priority: "high", type: "domain" } },
+        {
+          name: "commit",
+          matchType: "keyword",
+          config: { enforcement: "suggest", priority: "high", type: "domain" },
+        },
       ];
 
-      const blockingSkills = skills.filter((s) => s.config.enforcement === "block");
+      const blockingSkills = skills.filter(
+        (s) => s.config.enforcement === "block",
+      );
       expect(blockingSkills).toHaveLength(0);
     });
   });
@@ -323,12 +371,33 @@ describe("Skill Activation Prompt Hook", () => {
   describe("Validation Filtering", () => {
     it("should filter skills needing validation separately", () => {
       const matchedSkills: MatchedSkill[] = [
-        { name: "commit", needsValidation: true, matchType: "keyword", config: { type: "domain", enforcement: "suggest", priority: "high" } },
-        { name: "math-router", needsValidation: false, matchType: "intent", config: { type: "domain", enforcement: "block", priority: "critical" } },
-        { name: "debug", needsValidation: true, matchType: "keyword", config: { type: "process", enforcement: "suggest", priority: "high" } },
+        {
+          name: "commit",
+          needsValidation: true,
+          matchType: "keyword",
+          config: { type: "domain", enforcement: "suggest", priority: "high" },
+        },
+        {
+          name: "math-router",
+          needsValidation: false,
+          matchType: "intent",
+          config: {
+            type: "domain",
+            enforcement: "block",
+            priority: "critical",
+          },
+        },
+        {
+          name: "debug",
+          needsValidation: true,
+          matchType: "keyword",
+          config: { type: "process", enforcement: "suggest", priority: "high" },
+        },
       ];
 
-      const skillsNeedingValidation = matchedSkills.filter((s) => s.needsValidation);
+      const skillsNeedingValidation = matchedSkills.filter(
+        (s) => s.needsValidation,
+      );
       const confirmedSkills = matchedSkills.filter((s) => !s.needsValidation);
 
       expect(skillsNeedingValidation).toHaveLength(2);
@@ -374,11 +443,7 @@ describe("Skill Activation Prompt Hook", () => {
     });
 
     it("should detect questions ending with question mark", () => {
-      const questions = [
-        "What is X?",
-        "How does Y work?",
-        "Why is Z needed?",
-      ];
+      const questions = ["What is X?", "How does Y work?", "Why is Z needed?"];
 
       for (const q of questions) {
         const result = detectSemanticQuery(q);
@@ -395,7 +460,15 @@ describe("Skill Activation Prompt Hook", () => {
   describe("Output Formatting", () => {
     it("should format critical skills section", () => {
       const critical: MatchedSkill[] = [
-        { name: "math-router", config: { priority: "critical", type: "domain", enforcement: "block" }, matchType: "keyword" },
+        {
+          name: "math-router",
+          config: {
+            priority: "critical",
+            type: "domain",
+            enforcement: "block",
+          },
+          matchType: "keyword",
+        },
       ];
 
       let output = "";
@@ -412,7 +485,12 @@ describe("Skill Activation Prompt Hook", () => {
           name: "commit",
           matchedTerm: "commit",
           matchType: "keyword",
-          config: { description: "Create git commits", type: "domain", enforcement: "suggest", priority: "high" },
+          config: {
+            description: "Create git commits",
+            type: "domain",
+            enforcement: "suggest",
+            priority: "high",
+          },
         },
       ];
 

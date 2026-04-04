@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude-Code-orange.svg)](https://claude.ai/code)
-[![Skills](https://img.shields.io/badge/Skills-109-green.svg)](#skills-system)
+[![Skills](https://img.shields.io/badge/Skills-108-green.svg)](#skills-system)
 [![Agents](https://img.shields.io/badge/Agents-32-purple.svg)](#agents-system)
 [![Hooks](https://img.shields.io/badge/Hooks-30-blue.svg)](#hooks-system)
 
@@ -18,7 +18,7 @@
 - [Quick Start](#quick-start)
 - [Architecture](#architecture)
 - [Core Systems](#core-systems)
-  - [Skills (109)](#skills-system)
+  - [Skills (108)](#skills-system)
   - [Agents (32)](#agents-system)
   - [Hooks (30)](#hooks-system)
   - [TLDR Code Analysis](#tldr-code-analysis)
@@ -46,7 +46,7 @@ Claude Code has a **compaction problem**: when context fills up, the system comp
 | Starting fresh each session       | Memory system recalls + daemon auto-extracts learnings |
 | Reading entire files burns tokens | 5-layer code analysis + semantic index                 |
 | Complex tasks need coordination   | Meta-skills orchestrate agent workflows                |
-| Repeating workflows manually      | 109 skills with natural language triggers              |
+| Repeating workflows manually      | 108 skills with natural language triggers              |
 
 **The mantra: Compound, don't compact.** Extract learnings automatically, then start fresh with full context.
 
@@ -185,7 +185,7 @@ uv run python -m scripts.setup.wizard
 | 2     | Check prerequisites (Docker, Python, uv)                          |
 | 3-5   | Database + API key configuration                                  |
 | 6-7   | Start Docker stack, run migrations                                |
-| 8     | Install Claude Code integration (32 agents, 109 skills, 30 hooks) |
+| 8     | Install Claude Code integration (32 agents, 108 skills, 30 hooks) |
 | 9     | Math features (SymPy, Z3, Pint - optional)                        |
 | 10    | TLDR code analysis tool                                           |
 | 11-12 | Diagnostics tools + Loogle (optional)                             |
@@ -294,7 +294,7 @@ claude
 │                                                                     │
 │  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐             │
 │  │   Skills    │    │   Agents    │    │    Hooks    │             │
-│  │   (109)     │───▶│    (32)     │◀───│    (30)     │             │
+│  │   (108)     │───▶│    (32)     │◀───│    (30)     │             │
 │  └─────────────┘    └─────────────┘    └─────────────┘             │
 │         │                  │                  │                     │
 │         ▼                  ▼                  ▼                     │
@@ -1063,7 +1063,7 @@ This will:
 | Component    | Location           |
 | ------------ | ------------------ |
 | Agents (32)  | ~/.claude/agents/  |
-| Skills (109) | ~/.claude/skills/  |
+| Skills (108) | ~/.claude/skills/  |
 | Hooks (30)   | ~/.claude/hooks/   |
 | Rules        | ~/.claude/rules/   |
 | Scripts      | ~/.claude/scripts/ |
@@ -1220,7 +1220,7 @@ Skill activation triggers.
 | `PERPLEXITY_API_KEY` | Web search                                           | No       |
 | `NIA_API_KEY`        | Documentation search                                 | No       |
 | `CLAUDE_OPC_DIR`     | Path to CC's opc/ directory (set by wizard)          | Auto     |
-| `CLAUDE_CC_DIR` | Current project directory (set by SessionStart hook) | Auto     |
+| `CLAUDE_CC_DIR`      | Current project directory (set by SessionStart hook) | Auto     |
 
 Services without API keys still work:
 
@@ -1240,7 +1240,7 @@ continuous-claude/
 │   ├── hooks/            # 30 lifecycle hooks
 │   │   ├── src/          # TypeScript source
 │   │   └── dist/         # Compiled JavaScript
-│   ├── skills/           # 109 modular capabilities
+│   ├── skills/           # 108 modular capabilities
 │   ├── rules/            # System policies
 │   ├── scripts/          # Python utilities
 │   └── settings.json     # Hook configuration
@@ -1258,6 +1258,55 @@ continuous-claude/
 │       ├── handoffs/     # Session handoffs (*.yaml)
 │       └── plans/        # Implementation plans
 └── docs/                 # Documentation
+```
+
+---
+
+## Performance & Reliability
+
+### Hook Optimization (v3.1)
+
+The hook system has been significantly optimized for faster response times:
+
+| Improvement             | Speedup   | Description                                     |
+| ----------------------- | --------- | ----------------------------------------------- |
+| **Parallel Execution**  | 40-60%    | PostToolUse hooks run concurrently (5 hooks)    |
+| **PreToolUse Parallel** | 47-60%    | Edit and Task hooks run in parallel             |
+| **TLDR Daemon Cache**   | 99%       | Session cache avoids redundant PID/spawn checks |
+| **Exponential Backoff** | resilient | MCP connections retry with jitter               |
+| **Circuit Breaker**     | resilient | Per-server breaker prevents cascade failures    |
+
+### Hook Test Coverage
+
+169 tests across critical hooks ensure reliability:
+
+| Hook                       | Tests | Coverage                           |
+| -------------------------- | ----- | ---------------------------------- |
+| `skill-activation-prompt`  | 23    | Skill matching, priority, blocking |
+| `tldr-read-enforcer`       | 33    | Code detection, daemon integration |
+| `compiler-in-the-loop`     | 31    | Lean integration, sorry extraction |
+| `session-start-continuity` | 37    | Handoff parsing, ledger extraction |
+| `memory-awareness`         | 45    | Memory recall, context injection   |
+
+### Error Handling
+
+- **Selective Error Suppression**: Asyncgen errors filtered, not swallowed
+- **Error Statistics Tracking**: `get_suppressed_error_stats()` for observability
+- **Per-server Circuit Breakers**: Automatic recovery with health checking
+
+### Metrics
+
+```python
+from runtime.metrics import MetricsCollector, timed
+
+# Automatic timing
+@timed("hook_name")
+def my_hook():
+    ...
+
+# Get slow operation warnings
+stats = MetricsCollector.get_stats()
+# [hook_name] avg=150ms max=500ms count=100 slow_count=5
 ```
 
 ---

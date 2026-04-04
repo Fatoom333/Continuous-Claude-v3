@@ -15,8 +15,9 @@ import logging
 import statistics
 import time
 from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, TypeVar
+from typing import Any, TypeVar
 
 logger = logging.getLogger("mcp_execution.metrics")
 

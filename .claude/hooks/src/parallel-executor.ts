@@ -60,7 +60,7 @@ async function executeHook(
 ): Promise<HookResult> {
   const name = config.name || config.command.split(" ").slice(0, 2).join(" ");
   const startTime = Date.now();
-  const timeout = config.timeout ||30000;
+  const timeout = config.timeout || 30000;
 
   return new Promise((resolve) => {
     const parts = config.command.split(" ");
@@ -88,7 +88,7 @@ async function executeHook(
     const timeoutId = setTimeout(() => {
       proc.kill();
       resolve({
-      name,
+        name,
         success: false,
         output: stdout,
         error: `Hook timed out after ${timeout}ms`,
@@ -266,7 +266,10 @@ function mergeOutputs(results: HookResult[]): string {
         }
         // Merge with existing
         const existing = merged.hookSpecificOutput as Record<string, unknown>;
-        merged.hookSpecificOutput = { ...existing, ...(value as Record<string, unknown>) };
+        merged.hookSpecificOutput = {
+          ...existing,
+          ...(value as Record<string, unknown>),
+        };
       } else {
         merged[key] = value;
       }
@@ -294,14 +297,18 @@ async function main(): Promise<void> {
         hooks = Array.isArray(parsed) ? parsed : [parsed];
         i++;
       } catch (err) {
-        console.error(`Failed to parse hooks config: ${(err as Error).message}`);
+        console.error(
+          `Failed to parse hooks config: ${(err as Error).message}`,
+        );
         process.exit(1);
       }
     }
   }
 
   if (hooks.length === 0) {
-    console.error("No hooks configured. Pass hooks with --hooks '[{\"command\": \"...\"}]'");
+    console.error(
+      'No hooks configured. Pass hooks with --hooks \'[{"command": "..."}]\'',
+    );
     process.exit(1);
   }
 
@@ -326,9 +333,13 @@ async function main(): Promise<void> {
 
   // Log timing for observability
   if (process.env.PARALLEL_HOOKS_DEBUG === "true") {
-    console.error(`[PARALLEL] Executed ${hooks.length} hooks in ${aggregated.totalDuration}ms`);
+    console.error(
+      `[PARALLEL] Executed ${hooks.length} hooks in ${aggregated.totalDuration}ms`,
+    );
     for (const result of aggregated.results) {
-      console.error(`[PARALLEL] ${result.name}: ${result.duration}ms (${result.success ? "OK" : "FAIL"})`);
+      console.error(
+        `[PARALLEL] ${result.name}: ${result.duration}ms (${result.success ? "OK" : "FAIL"})`,
+      );
     }
   }
 
@@ -350,8 +361,9 @@ async function main(): Promise<void> {
     console.log(
       JSON.stringify({
         decision: "block",
-        reason: errorMessages || `Blocked by: ${aggregated.blockedHooks.join(", ")}`,
-      })
+        reason:
+          errorMessages || `Blocked by: ${aggregated.blockedHooks.join(", ")}`,
+      }),
     );
     return;
   }

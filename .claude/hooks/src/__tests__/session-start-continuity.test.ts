@@ -1,6 +1,6 @@
 /**
  * Tests for session-start-continuity.ts
- * 
+ *
  * Test coverage:
  * - Handoff directory name building/parsing
  * - UUID isolation support
@@ -51,17 +51,26 @@ import {
 
 describe("buildHandoffDirName", () => {
   it("builds handoff directory name with UUID suffix", () => {
-    const result = buildHandoffDirName("auth-refactor", "550e8400-e29b-41d4-a716-446655440000");
+    const result = buildHandoffDirName(
+      "auth-refactor",
+      "550e8400-e29b-41d4-a716-446655440000",
+    );
     expect(result).toBe("auth-refactor-550e8400");
   });
 
   it("handles UUID without dashes", () => {
-    const result = buildHandoffDirName("test", "12345678901234567890123456789012");
+    const result = buildHandoffDirName(
+      "test",
+      "12345678901234567890123456789012",
+    );
     expect(result).toBe("test-12345678");
   });
 
   it("extracts first 8 characters of UUID", () => {
-    const result = buildHandoffDirName("my-project", "a1b2c3d4-e5f6-7890-abcd-ef1234567890");
+    const result = buildHandoffDirName(
+      "my-project",
+      "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    );
     expect(result).toBe("my-project-a1b2c3d4");
   });
 });
@@ -248,7 +257,7 @@ describe("findSessionHandoff", () => {
 
     expect(result).toBeNull();
     expect(mockExistsSync).toHaveBeenCalledWith(
-      expect.stringContaining("handoffs/test-session")
+      expect.stringContaining("handoffs/test-session"),
     );
   });
 
@@ -256,17 +265,23 @@ describe("findSessionHandoff", () => {
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(["task-1.md", "task-2.yaml", "other.txt"]);
     mockStatSync.mockImplementation((filePath: string) => {
-      const files: Record<string, { mtime: Date; isDirectory: () => boolean }> = {
-        "/test/project/thoughts/shared/handoffs/test-session/task-1.md": {
-          mtime: new Date("2024-01-02"),
+      const files: Record<string, { mtime: Date; isDirectory: () => boolean }> =
+        {
+          "/test/project/thoughts/shared/handoffs/test-session/task-1.md": {
+            mtime: new Date("2024-01-02"),
+            isDirectory: () => false,
+          },
+          "/test/project/thoughts/shared/handoffs/test-session/task-2.yaml": {
+            mtime: new Date("2024-01-03"),
+            isDirectory: () => false,
+          },
+        };
+      return (
+        files[filePath as keyof typeof files] || {
+          mtime: new Date(),
           isDirectory: () => false,
-        },
-        "/test/project/thoughts/shared/handoffs/test-session/task-2.yaml": {
-          mtime: new Date("2024-01-03"),
-          isDirectory: () => false,
-        },
-      };
-      return files[filePath as keyof typeof files] || { mtime: new Date(), isDirectory: () => false };
+        }
+      );
     });
 
     const result = findSessionHandoff("test-session");
@@ -277,7 +292,11 @@ describe("findSessionHandoff", () => {
 
   it("only includes .md, .yaml, .yml files", () => {
     mockExistsSync.mockReturnValue(true);
-    mockReaddirSync.mockReturnValue(["task-1.md", "task-2.json", "auto-handoff.yaml"]);
+    mockReaddirSync.mockReturnValue([
+      "task-1.md",
+      "task-2.json",
+      "auto-handoff.yaml",
+    ]);
     mockStatSync.mockImplementation(() => ({
       mtime: new Date(),
       isDirectory: () => false,
@@ -331,7 +350,10 @@ describe("findSessionHandoffWithUUID", () => {
   it("returns null when handoffs directory doesn't exist", () => {
     mockExistsSync.mockReturnValue(false);
 
-    const result = findSessionHandoffWithUUID("auth-refactor", "550e8400-e29b-41d4-a716-446655440000");
+    const result = findSessionHandoffWithUUID(
+      "auth-refactor",
+      "550e8400-e29b-41d4-a716-446655440000",
+    );
 
     expect(result).toBeNull();
   });
@@ -349,7 +371,10 @@ describe("findSessionHandoffWithUUID", () => {
     }));
     mockReadFileSync.mockReturnValue("# Handoff content");
 
-    const result = findSessionHandoffWithUUID("auth-refactor", "550e8400-e29b-41d4-a716-446655440000");
+    const result = findSessionHandoffWithUUID(
+      "auth-refactor",
+      "550e8400-e29b-41d4-a716-446655440000",
+    );
 
     // The function should try to find handoff in the exact UUID dir
     expect(mockExistsSync).toHaveBeenCalled();
@@ -358,7 +383,11 @@ describe("findSessionHandoffWithUUID", () => {
   it("priority 2: legacy path when no UUID match", () => {
     mockExistsSync.mockImplementation((filePath: string) => {
       // Legacy path exists
-      if (filePath.includes("handoffs/auth-refactor") && !filePath.includes("-")) return true;
+      if (
+        filePath.includes("handoffs/auth-refactor") &&
+        !filePath.includes("-")
+      )
+        return true;
       return false;
     });
     mockReaddirSync.mockReturnValue(["handoff.md"]);
@@ -368,7 +397,10 @@ describe("findSessionHandoffWithUUID", () => {
     }));
     mockReadFileSync.mockReturnValue("# Handoff content");
 
-    const result = findSessionHandoffWithUUID("auth-refactor", "9999999999999999");
+    const result = findSessionHandoffWithUUID(
+      "auth-refactor",
+      "9999999999999999",
+    );
 
     // Function should try to check existence
     expect(mockExistsSync).toHaveBeenCalled();
@@ -377,12 +409,17 @@ describe("findSessionHandoffWithUUID", () => {
   it("priority 3: any UUID-suffixed dir for same session", () => {
     mockExistsSync.mockImplementation((filePath: string) => {
       // Return true for handoffs base dir
-      if (filePath.includes("handoffs") && !filePath.includes("auth-refactor")) return true;
+      if (filePath.includes("handoffs") && !filePath.includes("auth-refactor"))
+        return true;
       return false;
     });
     mockReaddirSync.mockImplementation((dirPath: string) => {
       if (dirPath.includes("handoffs") && !dirPath.includes("auth-refactor")) {
-        return ["auth-refactor-a1111111", "auth-refactor-a2222222", "other-session"];
+        return [
+          "auth-refactor-a1111111",
+          "auth-refactor-a2222222",
+          "other-session",
+        ];
       }
       return ["handoff.md"];
     });
@@ -392,7 +429,10 @@ describe("findSessionHandoffWithUUID", () => {
     }));
     mockReadFileSync.mockReturnValue("# Handoff content");
 
-    const result = findSessionHandoffWithUUID("auth-refactor", "9999999999999999");
+    const result = findSessionHandoffWithUUID(
+      "auth-refactor",
+      "9999999999999999",
+    );
 
     // Function should try to find handoff among UUID-suffixed dirs
     expect(mockExistsSync).toHaveBeenCalled();
@@ -401,12 +441,18 @@ describe("findSessionHandoffWithUUID", () => {
 
 describe("Edge Cases", () => {
   it("handles session names with special characters", () => {
-    const result = buildHandoffDirName("my-project_v2", "12345678-1234-5678-1234-567812345678");
+    const result = buildHandoffDirName(
+      "my-project_v2",
+      "12345678-1234-5678-1234-567812345678",
+    );
     expect(result).toBe("my-project_v2-12345678");
   });
 
   it("handles empty session name", () => {
-    const result = buildHandoffDirName("", "12345678-1234-5678-1234-567812345678");
+    const result = buildHandoffDirName(
+      "",
+      "12345678-1234-5678-1234-567812345678",
+    );
     expect(result).toBe("-12345678");
   });
 

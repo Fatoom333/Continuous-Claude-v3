@@ -424,6 +424,7 @@ If an MCP tool fails (API key missing, rate limited, etc.):
    - `failed` - No useful results obtained
 
 4. **Note gaps** in findings:
+
    ```markdown
    ## Gaps
 

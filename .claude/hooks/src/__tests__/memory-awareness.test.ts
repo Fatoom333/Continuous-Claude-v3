@@ -1,6 +1,6 @@
 /**
  * Tests for memory-awareness.ts
- * 
+ *
  * Test coverage:
  * - extractIntent: meta-phrase removal, intent extraction
  * - extractKeywords: stopword filtering, keyword extraction
@@ -30,14 +30,20 @@ vi.mock("../shared/opc-path.js", () => ({
 }));
 
 // Import after mocking
-import { extractIntent, extractKeywords, checkMemoryRelevance } from "../memory-awareness.js";
+import {
+  extractIntent,
+  extractKeywords,
+  checkMemoryRelevance,
+} from "../memory-awareness.js";
 import { getOpcDir } from "../shared/opc-path.js";
 
 describe("extractIntent", () => {
   it("strips 'can you' meta-phrases", () => {
     const result = extractIntent("Can you help me with authentication?");
     // Note: strips "Can you" but "help me" is a different pattern
-    expect(result.length).toBeLessThan("Can you help me with authentication?".length);
+    expect(result.length).toBeLessThan(
+      "Can you help me with authentication?".length,
+    );
     expect(result).toContain("authentication");
   });
 
@@ -76,7 +82,9 @@ describe("extractIntent", () => {
   it("strips multiple meta-phrases", () => {
     const result = extractIntent("Can you please help me with deployment?");
     // Result may vary based on order of stripping
-    expect(result.length).toBeLessThan("Can you please help me with deployment?".length);
+    expect(result.length).toBeLessThan(
+      "Can you please help me with deployment?".length,
+    );
   });
 
   it("returns original when no meta-phrases", () => {
@@ -121,7 +129,9 @@ describe("extractKeywords", () => {
   });
 
   it("filters stop words", () => {
-    const result = extractKeywords("What is the best way to implement authentication?");
+    const result = extractKeywords(
+      "What is the best way to implement authentication?",
+    );
     const words = result.split(" ");
     // Should not contain common stopwords as separate words
     expect(words).not.toContain("what");
@@ -137,13 +147,17 @@ describe("extractKeywords", () => {
   });
 
   it("limits to 5 keywords", () => {
-    const result = extractKeywords("implement user authentication with oauth2 security testing deployment");
+    const result = extractKeywords(
+      "implement user authentication with oauth2 security testing deployment",
+    );
     const words = result.split(" ");
     expect(words.length).toBeLessThanOrEqual(5);
   });
 
   it("removes duplicates", () => {
-    const result = extractKeywords("test test authentication authentication test");
+    const result = extractKeywords(
+      "test test authentication authentication test",
+    );
     const words = result.split(" ");
     const uniqueWords = [...new Set(words)];
     expect(words.length).toBe(uniqueWords.length);
@@ -205,7 +219,12 @@ describe("checkMemoryRelevance", () => {
       status: 0,
       stdout: JSON.stringify({
         results: [
-          { id: "12345678-1234-5678-1234-567812345678", content: "Test learning content", type: "PATTERN", score: 0.8 },
+          {
+            id: "12345678-1234-5678-1234-567812345678",
+            content: "Test learning content",
+            type: "PATTERN",
+            score: 0.8,
+          },
         ],
       }),
     } as ReturnType<typeof spawnSync>);
@@ -224,7 +243,8 @@ describe("checkMemoryRelevance", () => {
         results: [
           {
             id: "12345678",
-            content: "This is a long learning about authentication patterns in OAuth2 implementations",
+            content:
+              "This is a long learning about authentication patterns in OAuth2 implementations",
             type: "PATTERN",
             score: 0.9,
           },
@@ -260,7 +280,12 @@ describe("checkMemoryRelevance", () => {
       status: 0,
       stdout: JSON.stringify({
         results: [
-          { id: "12345678-90ab-cdef-1234-567890abcdef", content: "Test", type: "PATTERN", score: 0.8 },
+          {
+            id: "12345678-90ab-cdef-1234-567890abcdef",
+            content: "Test",
+            type: "PATTERN",
+            score: 0.8,
+          },
         ],
       }),
     } as ReturnType<typeof spawnSync>);
@@ -274,9 +299,7 @@ describe("checkMemoryRelevance", () => {
     vi.mocked(spawnSync).mockReturnValue({
       status: 0,
       stdout: JSON.stringify({
-        results: [
-          { content: "Test with missing fields" },
-        ],
+        results: [{ content: "Test with missing fields" }],
       }),
     } as ReturnType<typeof spawnSync>);
 
@@ -411,7 +434,8 @@ describe("Integration", () => {
   });
 
   it("end-to-end: full prompt extraction", () => {
-    const prompt = "Can you please show me how to implement OAuth2 authentication?";
+    const prompt =
+      "Can you please show me how to implement OAuth2 authentication?";
     const intent = extractIntent(prompt);
     // Should strip meta-phrases
     expect(intent).not.toContain("Can you");
@@ -420,9 +444,10 @@ describe("Integration", () => {
   });
 
   it("end-to-end: keywords from complex prompt", () => {
-    const prompt = "I want to understand the differences between JWT and OAuth2 for authentication";
+    const prompt =
+      "I want to understand the differences between JWT and OAuth2 for authentication";
     const keywords = extractKeywords(prompt);
-    
+
     // Should exclude stopwords and keep meaningful words
     const words = keywords.split(" ");
     expect(words.length).toBeLessThanOrEqual(5);

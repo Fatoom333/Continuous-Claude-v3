@@ -14,7 +14,6 @@ import os
 import random
 import re
 import sys
-import time
 from dataclasses import dataclass
 from enum import Enum
 from functools import lru_cache
@@ -29,8 +28,6 @@ from mcp.client.streamablehttp import streamablehttp_client
 from mcp.types import Tool
 
 from .circuit_breaker import (
-    CircuitBreaker,
-    CircuitBreakerConfig,
     CircuitBreakerManager,
     get_circuit_breaker_manager,
 )

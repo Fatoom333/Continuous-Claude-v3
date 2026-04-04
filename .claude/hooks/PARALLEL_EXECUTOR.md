@@ -33,6 +33,7 @@ The Parallel Hook Executor reduces hook chain latency by executing independent h
 ### 1. `parallel-executor.ts` (Generic)
 
 Core parallel execution engine that:
+
 - Accepts list of hooks via command-line argument
 - Executes hooks concurrently with Promise.all
 - Aggregates results from multiple hooks
@@ -41,6 +42,7 @@ Core parallel execution engine that:
 - Uses `CLAUDE_CC_DIR` environment variable for project directory
 
 **Usage:**
+
 ```bash
 node dist/parallel-executor.mjs \
   --hooks '[{"name":"hook1","command":"node hook1.mjs","timeout":5000}]'
@@ -49,11 +51,13 @@ node dist/parallel-executor.mjs \
 ### 2. `post-tool-use-parallel.ts`
 
 Specialized executor for PostToolUse Edit|Write hooks:
+
 - Runs5 hooks in parallel: typescript-preflight, compiler-in-the-loop, post-edit-notify, post-edit-diagnostics, import-validator
 - Merges outputs intelligently
 - Returns block decision if any hook fails
 
 **Usage:**
+
 ```bash
 echo '{"tool_name":"Edit",...}' | node dist/post-tool-use-parallel.mjs
 ```
@@ -61,10 +65,12 @@ echo '{"tool_name":"Edit",...}' | node dist/post-tool-use-parallel.mjs
 ### 3. `pre-tool-use-parallel.ts`
 
 Specialized executor for PreToolUse hooks:
+
 - **Edit:** Runs file-claims, edit-context-inject, signature-helper in parallel (3 hooks)
 - **Task:** Runs tldr-context-inject, arch-context-inject in parallel (2 hooks)
 
 **Usage:**
+
 ```bash
 # For Edit tool
 echo '{"tool_name":"Edit",...}' | node dist/pre-tool-use-parallel.mjs edit
@@ -74,12 +80,14 @@ echo '{"tool_name":"Task",...}' | node dist/pre-tool-use-parallel.mjs task
 ```
 
 **Performance:**
+
 - Edit: 15s sequential → ~6s parallel (60% faster)
 - Task: 60s sequential → ~32s parallel (47% faster)
 
 ### 4. `parallel-hooks.yaml`
 
 Configuration file defining which hooks can run in parallel:
+
 - `post_tool_use_edit` - Edit|Write hooks
 - `pre_tool_use_read` - Read operation hooks
 - `pre_tool_use_edit` - Edit operation hooks
@@ -90,17 +98,18 @@ Configuration file defining which hooks can run in parallel:
 ### Option 1: Replace sequential hooks in settings.json
 
 **Before:**
+
 ```json
 {
   "PostToolUse": [
     {
       "matcher": "Edit|Write",
       "hooks": [
-        {"command": "node dist/typescript-preflight.mjs", "timeout": 40},
-        {"command": "node dist/compiler-in-the-loop.mjs", "timeout": 30},
-        {"command": "node dist/post-edit-notify.mjs", "timeout": 5},
-        {"command": "node dist/post-edit-diagnostics.mjs", "timeout": 10},
-        {"command": "node dist/import-validator.mjs", "timeout": 5}
+        { "command": "node dist/typescript-preflight.mjs", "timeout": 40 },
+        { "command": "node dist/compiler-in-the-loop.mjs", "timeout": 30 },
+        { "command": "node dist/post-edit-notify.mjs", "timeout": 5 },
+        { "command": "node dist/post-edit-diagnostics.mjs", "timeout": 10 },
+        { "command": "node dist/import-validator.mjs", "timeout": 5 }
       ]
     }
   ]
@@ -108,6 +117,7 @@ Configuration file defining which hooks can run in parallel:
 ```
 
 **After:**
+
 ```json
 {
   "PostToolUse": [
@@ -147,6 +157,7 @@ Configuration file defining which hooks can run in parallel:
 ### Benchmarks
 
 **Sequential Execution:**
+
 ```
 typescript-preflight:    40s timeout (~5s actual)
 compiler-in-the-loop:    30s timeout (~3s actual)
@@ -158,6 +169,7 @@ Total: ~8.4seconds + overhead = ~9-10seconds
 ```
 
 **Parallel Execution:**
+
 ```
 All hooks run concurrently
 Max hook time: 5s
@@ -178,22 +190,24 @@ Total: ~5.5seconds
 
 ### Environment Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PARALLEL_HOOKS_MAX_CONCURRENCY` | 4 | Maximum concurrent hooks |
-| `PARALLEL_HOOKS_TIMEOUT` | 60000 | Global timeout in ms |
-| `PARALLEL_HOOKS_FAIL_FAST` | false | Stop on first error |
-| `PARALLEL_HOOKS_CONTINUE_ON_ERROR` | true | Continue on hook failure |
-| `PARALLEL_HOOKS_DEBUG` | false | Enable debug logging |
+| Variable                           | Default | Description              |
+| ---------------------------------- | ------- | ------------------------ |
+| `PARALLEL_HOOKS_MAX_CONCURRENCY`   | 4       | Maximum concurrent hooks |
+| `PARALLEL_HOOKS_TIMEOUT`           | 60000   | Global timeout in ms     |
+| `PARALLEL_HOOKS_FAIL_FAST`         | false   | Stop on first error      |
+| `PARALLEL_HOOKS_CONTINUE_ON_ERROR` | true    | Continue on hook failure |
+| `PARALLEL_HOOKS_DEBUG`             | false   | Enable debug logging     |
 
 ### Debug Mode
 
 Enable debug logging to see timing:
+
 ```bash
 PARALLEL_HOOKS_DEBUG=true CLAUDE_CC_DIR=/path/to/project node dist/parallel-executor.mjs --hooks '[...]'
 ```
 
 Output:
+
 ```
 [PARALLEL] Executed 5hooks in 5200ms
 [PARALLEL] typescript-preflight: 4800ms (OK)
@@ -208,12 +222,14 @@ Output:
 ### Hook Independence
 
 Hooks must be **independent** to run in parallel:
+
 - ✅ No shared state between hooks
 - ✅ No dependency on other hook outputs
 - ✅ Each hook reads from stdin independently
 - ✅ Each hook writes to stdout independently
 
 **Not suitable for parallel:**
+
 - ❌ Hooks that depend on previous hook results
 - ❌ Hooks that write to shared state
 - ❌ Hooks that must run in specific order
@@ -228,6 +244,7 @@ Hooks must be **independent** to run in parallel:
 ### Output Merging
 
 When multiple hooks return JSON:
+
 ```javascript
 // Hook1: {"errors": ["error1"]}
 // Hook2: {"warnings": ["warning1"]}
@@ -235,6 +252,7 @@ When multiple hooks return JSON:
 ```
 
 For `hookSpecificOutput`:
+
 ```javascript
 // Hook1: {"hookSpecificOutput": {"decision": "block", "reason": "..."}}
 // Hook2: {"hookSpecificOutput": {"suggestions": ["..."]}}
@@ -244,12 +262,14 @@ For `hookSpecificOutput`:
 ## Testing
 
 Run the test suite:
+
 ```bash
 cd .claude/hooks
 node dist/__tests__/parallel-executor.test.mjs
 ```
 
 Tests cover:
+
 - Single hook execution
 - Multiple parallel hooks
 - Error handling

@@ -268,7 +268,9 @@ async function main(): Promise<void> {
 
   // Log timing for observability
   if (process.env.PARALLEL_HOOKS_DEBUG === "true") {
-    console.error(`[PARALLEL] Executed ${results.length} PreToolUse hooks in ${totalDuration}ms`);
+    console.error(
+      `[PARALLEL] Executed ${results.length} PreToolUse hooks in ${totalDuration}ms`,
+    );
     for (const result of results) {
       console.error(
         `[PARALLEL] ${result.name}: ${result.duration}ms (${result.success ? "OK" : "FAIL"})`,
@@ -284,13 +286,17 @@ async function main(): Promise<void> {
         const hookOutput = parsed.hookSpecificOutput || parsed;
         if (hookOutput.permissionDecision === "deny") {
           // If any hook denies, return the deny decision
-          console.log(JSON.stringify({
-            hookSpecificOutput: {
-              hookEventName: "PreToolUse",
-              permissionDecision: "deny",
-              permissionDecisionReason: hookOutput.permissionDecisionReason || `Blocked by ${result.name}`,
-            },
-          }));
+          console.log(
+            JSON.stringify({
+              hookSpecificOutput: {
+                hookEventName: "PreToolUse",
+                permissionDecision: "deny",
+                permissionDecisionReason:
+                  hookOutput.permissionDecisionReason ||
+                  `Blocked by ${result.name}`,
+              },
+            }),
+          );
           return;
         }
       } catch {

@@ -21,7 +21,7 @@ const TEST_CASES = [
     config: {
       hooks: [
         {
-          command: "echo '{\"test\": \"pass\"}'",
+          command: 'echo \'{"test": "pass"}\'',
           timeout: 5000,
           name: "echo-test",
         },
@@ -38,17 +38,17 @@ const TEST_CASES = [
     config: {
       hooks: [
         {
-          command: "echo '{\"test\": \"one\"}'",
+          command: 'echo \'{"test": "one"}\'',
           timeout: 5000,
           name: "hook-one",
         },
         {
-          command: "echo '{\"test\": \"two\"}'",
+          command: 'echo \'{"test": "two"}\'',
           timeout: 5000,
           name: "hook-two",
         },
         {
-          command: "echo '{\"test\": \"three\"}'",
+          command: 'echo \'{"test": "three"}\'',
           timeout: 5000,
           name: "hook-three",
         },
@@ -66,7 +66,7 @@ const TEST_CASES = [
     config: {
       hooks: [
         {
-          command: "echo '{\"test\": \"pass\"}'",
+          command: 'echo \'{"test": "pass"}\'',
           timeout: 5000,
           name: "passing-hook",
         },
@@ -89,7 +89,7 @@ const TEST_CASES = [
     config: {
       hooks: [
         {
-          command: "echo '{\"decision\": \"block\", \"reason\": \"Test block\"}'",
+          command: 'echo \'{"decision": "block", "reason": "Test block"}\'',
           timeout: 5000,
           name: "blocking-hook",
         },
@@ -147,11 +147,10 @@ async function runTest(testCase: (typeof TEST_CASES)[0]): Promise<TestResult> {
       cwd: process.cwd(),
       env: {
         ...process.env,
-        PARALLEL_HOOKS_MAX_CONCURRENCY:
-          String(testCase.config.maxConcurrency || 4),
-        PARALLEL_HOOKS_TIMEOUT: String(
-          testCase.config.timeout || 60000,
+        PARALLEL_HOOKS_MAX_CONCURRENCY: String(
+          testCase.config.maxConcurrency || 4,
         ),
+        PARALLEL_HOOKS_TIMEOUT: String(testCase.config.timeout || 60000),
         PARALLEL_HOOKS_CONTINUE_ON_ERROR:
           testCase.config.continueOnError !== false ? "true" : "false",
         PARALLEL_HOOKS_DEBUG: "true",
@@ -211,9 +210,7 @@ async function runTest(testCase: (typeof TEST_CASES)[0]): Promise<TestResult> {
         }
 
         if (testCase.expected.resultCount !== undefined) {
-          if (
-            output.results?.length !== testCase.expected.resultCount
-          ) {
+          if (output.results?.length !== testCase.expected.resultCount) {
             errors.push(
               `resultCount: expected ${testCase.expected.resultCount}, got ${output.results?.length}`,
             );
