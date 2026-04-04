@@ -26,6 +26,90 @@ logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s", st
 logger = logging.getLogger("mcp_execution.harness")
 
 
+# ===========================================================================
+# Error Pattern Classification
+# ===========================================================================
+
+# Known harmless error patterns from MCP SDK asyncgen cleanup
+HARMLESS_ASYNCGEN_PATTERNS = [
+    "asynchronous generator",
+    "asyncgen",
+    "cancel scope",
+    "attempted to cancel",
+    "cancel scope stack",
+    "cancel scope mismatch",
+]
+
+# Patterns that indicate real problems that should NOT be suppressed
+REAL_ERROR_PATTERNS = [
+    "traceback",
+    "error in",
+    "exception in",
+    "failed to",
+    "connection refused",
+    "connection reset",
+    "permission denied",
+    "file not found",
+    "module not found",
+    "import error",
+]
+
+
+def is_harmless_asyncgen_error(message: str, exception: Exception | None) -> bool:
+    """Check if an error is a harmless asyncgen/cancel scope cleanup artifact.
+
+    These errors occur when MCP SDK's async generators are cleaned up in
+    different task contexts. They are harmless and should be suppressed.
+
+    Args:
+        message: Log message or error string
+        exception: Optional exception object for additional context
+
+    Returns:
+        True if the error is harmless and should be suppressed
+    """
+    msg_lower = message.lower()
+
+    # Check if any harmless pattern matches
+    for pattern in HARMLESS_ASYNCGEN_PATTERNS:
+        if pattern in msg_lower:
+            # Verify it's not masking a real error
+            for real_pattern in REAL_ERROR_PATTERNS:
+                if real_pattern in msg_lower:
+                    return False
+            return True
+
+    # Check exception type
+    if exception:
+        exc_type = type(exception).__name__.lower()
+        if "cancel" in exc_type:
+            return True
+
+    return False
+
+
+class SelectiveAsyncgenFilter(logging.Filter):
+    """Filter that selectively suppresses harmless asyncgen cleanup errors.
+
+    Unlike blanket suppression, this filter checks each log record to ensure
+    we only suppress known harmless patterns, not real errors.
+    """
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        message = record.getMessage()
+
+        # Get exception if present
+        exception = getattr(record, "exc_info", None)
+        exc_obj = exception[1] if exception else None
+
+        # Suppress only if it's a harmless asyncgen error
+        if is_harmless_asyncgen_error(message, exc_obj):
+            logger.debug(f"Suppressed harmless asyncgen error: {message[:100]}")
+            return False
+
+        return True
+
+
 def _parse_arguments() -> Path:
     """
     Parse command-line arguments.
@@ -40,94 +124,44 @@ def _parse_arguments() -> Path:
     return Path(sys.argv[1]).resolve()
 
 
-class _AsyncgenErrorFilter(logging.Filter):
-    """Filter that suppresses asyncgen cleanup errors from MCP SDK."""
-
-    def filter(self, record: logging.LogRecord) -> bool:
-        # Suppress the "error occurred during closing of asynchronous generator" message
-        if "asynchronous generator" in record.getMessage().lower():
-            return False
-        return True
+# Handler for selective asyncgen error suppression (set by _suppress_asyncgen_errors)
+_asyncgen_handler = None
 
 
 def _suppress_asyncgen_errors():
     """
-    Suppress asyncgen cleanup error logs from asyncio.
+    Install selective asyncgen cleanup error handling.
 
-    The MCP SDK's stdio_client uses async generators that can raise RuntimeErrors
-    about cancel scopes when closed in a different task context. These errors are
-    harmless cleanup artifacts that we suppress to avoid alarming users.
+    Unlike blanket suppression, this uses pattern matching to only suppress
+    known harmless errors while preserving real error visibility.
 
-    This function patches asyncio.run() to install a silent exception handler on
-    any event loops it creates, ensuring scripts using asyncio.run() don't see
-    these harmless errors.
+    This function:
+    1. Adds SelectiveAsyncgenFilter to asyncio logger
+    2. Creates a handler that only suppresses harmless patterns
+    3. Stores handler for use in event loops
     """
-    # Add filter to asyncio logger to suppress asyncgen cleanup errors
-    asyncio_logger = logging.getLogger("asyncio")
-    asyncio_logger.addFilter(_AsyncgenErrorFilter())
+    global _asyncgen_handler
 
-    # Define silent exception handler
-    def silent_exception_handler(loop, context):
-        # Suppress asyncgen and cancel scope related errors
+    # Add selective filter to asyncio logger
+    asyncio_logger = logging.getLogger("asyncio")
+    asyncio_logger.addFilter(SelectiveAsyncgenFilter())
+
+    # Define selective exception handler
+    def selective_exception_handler(loop, context):
+        """Handle exceptions selectively - suppress only harmless asyncgen errors."""
         exception = context.get("exception")
         message = context.get("message", "")
 
-        if exception:
-            err_str = str(exception).lower()
-            if "cancel scope" in err_str or "asyncgen" in err_str:
-                return
-
-        if "asyncgen" in message.lower() or "asynchronous generator" in message.lower():
+        # Check if this is a harmless asyncgen error
+        if is_harmless_asyncgen_error(message, exception):
+            logger.debug(f"Suppressed asyncgen error in loop handler: {message[:100]}")
             return
 
-        # For other exceptions, use default handler
+        # For all other exceptions, use default handler
         loop.default_exception_handler(context)
 
-    # Store handler for later use
-    _suppress_asyncgen_errors._handler = silent_exception_handler
-
-    # Monkey-patch asyncio.run to install our exception handler
-
-    def patched_run(main, *, debug=None, **kwargs):
-        # Create loop manually so we can set exception handler
-        loop = asyncio.new_event_loop()
-        loop.set_exception_handler(silent_exception_handler)
-        try:
-            asyncio.set_event_loop(loop)
-            if debug is not None:
-                loop.set_debug(debug)
-            return loop.run_until_complete(main)
-        finally:
-            try:
-                # Suppress errors during shutdown
-                _cancel_all_tasks(loop)
-                loop.run_until_complete(loop.shutdown_asyncgens())
-                loop.run_until_complete(loop.shutdown_default_executor())
-            except Exception:
-                pass
-            finally:
-                asyncio.set_event_loop(None)
-                loop.close()
-
-    asyncio.run = patched_run
-
-
-def _cancel_all_tasks(loop):
-    """Cancel all pending tasks in the loop."""
-    to_cancel = asyncio.all_tasks(loop)
-    if not to_cancel:
-        return
-
-    for task in to_cancel:
-        task.cancel()
-
-    loop.run_until_complete(asyncio.gather(*to_cancel, return_exceptions=True))
-
-    for task in to_cancel:
-        if task.cancelled():
-            continue
-        if task.exception() is not None:
-            pass  # Suppress task exceptions during cleanup
+    # Store handler globally for use in _execute_direct
+    _asyncgen_handler = selective_exception_handler
 
 
 def _execute_direct(script_path: Path) -> int:
@@ -162,8 +196,8 @@ def _execute_direct(script_path: Path) -> int:
     asyncio.set_event_loop(loop)
 
     # Set exception handler to suppress asyncgen errors
-    if hasattr(_suppress_asyncgen_errors, "_handler"):
-        loop.set_exception_handler(_suppress_asyncgen_errors._handler)
+    if _asyncgen_handler is not None:
+        loop.set_exception_handler(_asyncgen_handler)
 
     # Initialize MCP client manager
     manager = get_mcp_client_manager()
