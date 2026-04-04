@@ -28,8 +28,15 @@ from mcp.client.stdio import stdio_client
 from mcp.client.streamablehttp import streamablehttp_client
 from mcp.types import Tool
 
+from .circuit_breaker import (
+    CircuitBreaker,
+    CircuitBreakerConfig,
+    CircuitBreakerManager,
+    get_circuit_breaker_manager,
+)
 from .config import McpConfig, ServerConfig
 from .exceptions import (
+    CircuitOpenError,
     ConfigurationError,
     ServerConnectionError,
     ToolExecutionError,
@@ -374,6 +381,7 @@ class McpClientManager:
         _session_contexts: Session context managers for proper lifecycle management
         _read_streams: Active stdio read streams
         _write_streams: Active stdio write streams
+        _circuit_breakers: Circuit breaker manager for resilient server calls
     """
 
     def __init__(self) -> None:
@@ -386,6 +394,7 @@ class McpClientManager:
         self._session_contexts: dict[str, Any] = {}  # Store session context managers
         self._read_streams: dict[str, Any] = {}
         self._write_streams: dict[str, Any] = {}
+        self._circuit_breakers: CircuitBreakerManager = get_circuit_breaker_manager()
 
     def _validate_state(self, required_state: ConnectionState, operation: str) -> None:
         """Validate that the manager is in the required state for an operation.
@@ -770,6 +779,18 @@ class McpClientManager:
 
         server_name, tool_name = tool_identifier.split("__", 1)
 
+        # Get circuit breaker for this server
+        circuit_breaker = self._circuit_breakers.get_breaker(server_name)
+
+        # Check if circuit is open (server is failing)
+        if not circuit_breaker.should_allow():
+            stats = circuit_breaker.stats
+            logger.warning(
+                f"Circuit breaker OPEN for server '{server_name}': "
+                f"{stats.failed_calls} failures, last error: {stats.last_failure_message}"
+            )
+            raise CircuitOpenError(server_name, stats)
+
         # Get server configuration
         server_config = self._config.get_server(server_name)
         if not server_config:
@@ -815,12 +836,18 @@ class McpClientManager:
                 # Use dispatch-based unwrapping for reduced complexity
                 unwrapped = _unwrap_mcp_response(result)
 
+                # Record success for circuit breaker
+                circuit_breaker.record_success()
+
                 logger.debug(f"Tool execution result: {unwrapped}")
                 return unwrapped
 
             except Exception as e:
                 last_error = e
                 error_classification = classify_error(e)
+
+                # Record failure for circuit breaker
+                circuit_breaker.record_failure(e)
 
                 # Don't retry non-retryable errors
                 if error_classification == "non_retryable":
