@@ -42,7 +42,7 @@ function readStdin(): string {
  * Extract the INTENT from user prompt - what they're actually asking about.
  * Removes meta-language ("can you", "help me", "recall") to get core topic.
  */
-function extractIntent(prompt: string): string {
+export function extractIntent(prompt: string): string {
   // Meta-phrases to remove (these describe HOW, not WHAT)
   const metaPhrases = [
     /^(can you|could you|would you|please|help me|i want to|i need to|let's|lets)\s+/gi,
@@ -72,7 +72,7 @@ function extractIntent(prompt: string): string {
 /**
  * Extract meaningful keywords from prompt (fallback for very short intents).
  */
-function extractKeywords(prompt: string): string {
+export function extractKeywords(prompt: string): string {
   const stopWords = new Set([
     "a",
     "an",
@@ -223,7 +223,7 @@ function extractKeywords(prompt: string): string {
  * For text-only mode, we search by the most significant keyword
  * (text ILIKE looks for substring match, not multi-word).
  */
-function checkMemoryRelevance(
+export function checkMemoryRelevance(
   intent: string,
   projectDir: string,
 ): MemoryMatch | null {
