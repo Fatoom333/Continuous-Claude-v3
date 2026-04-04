@@ -13,6 +13,8 @@ import logging
 import runpy
 import signal
 import sys
+from collections import Counter
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, NoReturn
 
@@ -24,6 +26,58 @@ from .mcp_client import get_mcp_client_manager
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s", stream=sys.stderr)
 
 logger = logging.getLogger("mcp_execution.harness")
+
+
+# ===========================================================================
+# Suppressed Error Statistics
+# ===========================================================================
+
+
+@dataclass
+class SuppressedErrorStats:
+    """Statistics for suppressed asyncgen errors.
+
+    Tracks counts and patterns of suppressed errors for debugging.
+    Can be queried via get_suppressed_error_stats() for diagnostics.
+    """
+
+    total_count: int = 0
+    by_pattern: Counter = field(default_factory=Counter)
+    last_message: str | None = None
+    last_exception_type: str | None = None
+
+
+# Global stats instance
+_suppressed_stats = SuppressedErrorStats()
+
+
+def get_suppressed_error_stats() -> SuppressedErrorStats:
+    """Get statistics about suppressed asyncgen errors.
+
+    Returns:
+        SuppressedErrorStats with current counts and patterns
+    """
+    return _suppressed_stats
+
+
+def reset_suppressed_error_stats() -> None:
+    """Reset suppressed error statistics."""
+    global _suppressed_stats
+    _suppressed_stats = SuppressedErrorStats()
+
+
+def _record_suppressed_error(message: str, exception: Exception | None) -> None:
+    """Record a suppressed error for statistics tracking.
+
+    Args:
+        message: The error message
+        exception: Optional exception object
+    """
+    global _suppressed_stats
+    _suppressed_stats.total_count += 1
+    _suppressed_stats.last_message = message[:200]  # Truncate for memory
+    if exception:
+        _suppressed_stats.last_exception_type = type(exception).__name__
 
 
 # ===========================================================================
@@ -68,22 +122,32 @@ def is_harmless_asyncgen_error(message: str, exception: Exception | None) -> boo
     Returns:
         True if the error is harmless and should be suppressed
     """
+    global _suppressed_stats
     msg_lower = message.lower()
 
     # Check if any harmless pattern matches
+    matched_pattern = None
     for pattern in HARMLESS_ASYNCGEN_PATTERNS:
         if pattern in msg_lower:
             # Verify it's not masking a real error
             for real_pattern in REAL_ERROR_PATTERNS:
                 if real_pattern in msg_lower:
                     return False
-            return True
+            matched_pattern = pattern
+            break
 
     # Check exception type
     if exception:
         exc_type = type(exception).__name__.lower()
         if "cancel" in exc_type:
+            # Record the matched pattern for statistics
+            _suppressed_stats.by_pattern[exc_type] += 1
             return True
+
+    if matched_pattern:
+        # Record the matched pattern for statistics
+        _suppressed_stats.by_pattern[matched_pattern] += 1
+        return True
 
     return False
 
@@ -93,7 +157,19 @@ class SelectiveAsyncgenFilter(logging.Filter):
 
     Unlike blanket suppression, this filter checks each log record to ensure
     we only suppress known harmless patterns, not real errors.
+
+    Attributes:
+        log_details: If True, log full error details at DEBUG level
     """
+
+    def __init__(self, log_details: bool = False):
+        """Initialize the filter.
+
+        Args:
+            log_details: If True, log full error details including stack traces
+        """
+        super().__init__()
+        self.log_details = log_details
 
     def filter(self, record: logging.LogRecord) -> bool:
         message = record.getMessage()
@@ -104,7 +180,18 @@ class SelectiveAsyncgenFilter(logging.Filter):
 
         # Suppress only if it's a harmless asyncgen error
         if is_harmless_asyncgen_error(message, exc_obj):
-            logger.debug(f"Suppressed harmless asyncgen error: {message[:100]}")
+            # Record for statistics
+            _record_suppressed_error(message, exc_obj)
+
+            # Log suppressed error at DEBUG level
+            if self.log_details and exc_obj:
+                logger.debug(
+                    f"Suppressed asyncgen error:\n"
+                    f"  Message: {message[:200]}\n"
+                    f"  Exception: {type(exc_obj).__name__}: {exc_obj}"
+                )
+            else:
+                logger.debug(f"Suppressed asyncgen error: {message[:100]}")
             return False
 
         return True
