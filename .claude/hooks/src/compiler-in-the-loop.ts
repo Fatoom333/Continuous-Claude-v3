@@ -70,7 +70,7 @@ function saveState(state: CompilerState): void {
   writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
 }
 
-function runLeanCompiler(
+export function runLeanCompiler(
   filePath: string,
   cwd: string,
 ): { success: boolean; output: string; sorries: string[] } {
@@ -118,7 +118,7 @@ function runLeanCompiler(
   }
 }
 
-function extractSorries(filePath: string): string[] {
+export function extractSorries(filePath: string): string[] {
   if (!existsSync(filePath)) return [];
 
   const content = readFileSync(filePath, "utf-8");
@@ -138,7 +138,7 @@ function extractSorries(filePath: string): string[] {
  * Check if LMStudio is available with a quick health check.
  * Caches result for AVAILABILITY_CACHE_MS to avoid repeated checks.
  */
-async function checkLMStudioAvailable(): Promise<boolean> {
+export async function checkLMStudioAvailable(): Promise<boolean> {
   // Return cached result if still valid
   const now = Date.now();
   if (
@@ -181,12 +181,12 @@ Lean compiler feedback only. To enable AI tactic suggestions:
  * Call Goedel-Prover-V2-8B via LMStudio for tactic suggestions.
  * Returns suggested tactics or null if unavailable.
  */
-interface GoedelResult {
+export interface GoedelResult {
   suggestion: string | null;
   unavailableMessage: string | null;
 }
 
-async function getGoedelSuggestions(
+export async function getGoedelSuggestions(
   leanCode: string,
   errors: string,
   sorries: string[],
@@ -243,7 +243,7 @@ async function getGoedelSuggestions(
 /**
  * Build prompt for Goedel-Prover-V2-8B in the format it expects.
  */
-function buildGoedelPrompt(
+export function buildGoedelPrompt(
   leanCode: string,
   errors: string,
   sorries: string[],
@@ -384,7 +384,12 @@ Fix each 'sorry' with a valid proof term or tactic.
   }
 }
 
-main().catch((err) => {
-  console.error(err.message);
-  process.exit(1);
-});
+// Only run main() when executed directly (not when imported for testing)
+const isMainModule = import.meta.url === `file://${process.argv[1]}`;
+
+if (isMainModule) {
+  main().catch((err) => {
+    console.error(err.message);
+    process.exit(1);
+  });
+}
