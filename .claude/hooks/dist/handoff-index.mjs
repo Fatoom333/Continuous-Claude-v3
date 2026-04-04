@@ -10,8 +10,8 @@ function getPpid(pid) {
         `wmic process where ProcessId=${pid} get ParentProcessId`,
         {
           encoding: "utf-8",
-          timeout: 5e3,
-        },
+          timeout: 5e3
+        }
       );
       for (const line of result.split("\n")) {
         const trimmed = line.trim();
@@ -19,13 +19,14 @@ function getPpid(pid) {
           return parseInt(trimmed, 10);
         }
       }
-    } catch {}
+    } catch {
+    }
     return null;
   }
   try {
     const result = execSync(`ps -o ppid= -p ${pid}`, {
       encoding: "utf-8",
-      timeout: 5e3,
+      timeout: 5e3
     });
     const ppid = parseInt(result.trim(), 10);
     return isNaN(ppid) ? null : ppid;
@@ -50,7 +51,7 @@ function storeSessionAffinity(projectDir, terminalPid, sessionName) {
     ".claude",
     "cache",
     "artifact-index",
-    "context.db",
+    "context.db"
   );
   const dbDir = path.dirname(dbPath);
   try {
@@ -71,7 +72,8 @@ function storeSessionAffinity(projectDir, terminalPid, sessionName) {
     `);
     stmt.run(terminalPid.toString(), sessionName);
     db.close();
-  } catch {}
+  } catch {
+  }
 }
 function extractSessionName(filePath) {
   const parts = filePath.split("/");
@@ -90,18 +92,13 @@ async function main() {
     return;
   }
   const filePath = input.tool_input?.file_path || "";
-  const isHandoffFile =
-    filePath.endsWith(".md") ||
-    filePath.endsWith(".yaml") ||
-    filePath.endsWith(".yml");
+  const isHandoffFile = filePath.endsWith(".md") || filePath.endsWith(".yaml") || filePath.endsWith(".yml");
   if (!filePath.includes("handoffs") || !isHandoffFile) {
     console.log(JSON.stringify({ result: "continue" }));
     return;
   }
   try {
-    const fullPath = path.isAbsolute(filePath)
-      ? filePath
-      : path.join(projectDir, filePath);
+    const fullPath = path.isAbsolute(filePath) ? filePath : path.join(projectDir, filePath);
     if (!fs.existsSync(fullPath)) {
       console.log(JSON.stringify({ result: "continue" }));
       return;
@@ -117,7 +114,7 @@ async function main() {
         ".claude",
         "state",
         "braintrust_sessions",
-        `${input.session_id}.json`,
+        `${input.session_id}.json`
       );
       if (fs.existsSync(stateFile)) {
         try {
@@ -126,18 +123,15 @@ async function main() {
           const newFields = [
             `root_span_id: ${state.root_span_id}`,
             `turn_span_id: ${state.current_turn_span_id || ""}`,
-            `session_id: ${input.session_id}`,
+            `session_id: ${input.session_id}`
           ].join("\n");
           if (isYamlFile) {
             content = `${newFields}
 ${content}`;
           } else if (hasFrontmatter) {
-            content = content.replace(
-              /^---\n/,
-              `---
+            content = content.replace(/^---\n/, `---
 ${newFields}
-`,
-            );
+`);
           } else {
             content = `---
 ${newFields}
@@ -149,7 +143,8 @@ ${content}`;
           fs.writeFileSync(tempPath, content);
           fs.renameSync(tempPath, fullPath);
           modified = true;
-        } catch (stateErr) {}
+        } catch (stateErr) {
+        }
       }
     }
     const terminalPid = getTerminalShellPid();
@@ -165,8 +160,8 @@ ${content}`;
         {
           cwd: projectDir,
           detached: true,
-          stdio: "ignore",
-        },
+          stdio: "ignore"
+        }
       );
       child.unref();
     }
@@ -178,7 +173,7 @@ ${content}`;
 async function readStdin() {
   return new Promise((resolve) => {
     let data = "";
-    process.stdin.on("data", (chunk) => (data += chunk));
+    process.stdin.on("data", (chunk) => data += chunk);
     process.stdin.on("end", () => resolve(data));
   });
 }

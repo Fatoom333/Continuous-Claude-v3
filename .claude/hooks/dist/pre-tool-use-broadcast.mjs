@@ -28,7 +28,7 @@ async function main() {
     ".claude",
     "cache",
     "agentica-coordination",
-    "coordination.db",
+    "coordination.db"
   );
   if (!existsSync(dbPath)) {
     console.log(JSON.stringify({ result: "continue" }));
@@ -73,8 +73,8 @@ print(json.dumps(broadcasts))
       ["-c", query, dbPath, swarmId, agentId],
       {
         encoding: "utf-8",
-        maxBuffer: 1024 * 1024,
-      },
+        maxBuffer: 1024 * 1024
+      }
     );
     if (result.status !== 0) {
       console.log(JSON.stringify({ result: "continue" }));
@@ -93,8 +93,8 @@ print(json.dumps(broadcasts))
       console.log(
         JSON.stringify({
           result: "continue",
-          message: contextMessage,
-        }),
+          message: contextMessage
+        })
       );
     } else {
       console.log(JSON.stringify({ result: "continue" }));

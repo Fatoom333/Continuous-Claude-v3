@@ -24,8 +24,7 @@ async function main() {
       return;
     }
     const response = input.tool_response || {};
-    const filePath =
-      response.filePath || response.file_path || input.tool_input?.file_path;
+    const filePath = response.filePath || response.file_path || input.tool_input?.file_path;
     if (!filePath || typeof filePath !== "string") {
       console.log(JSON.stringify({}));
       return;
@@ -46,7 +45,7 @@ async function main() {
         homeDir,
         ".claude",
         "scripts",
-        "typescript_check.py",
+        "typescript_check.py"
       );
     }
     if (!fs.existsSync(scriptPath)) {
@@ -59,14 +58,14 @@ async function main() {
         {
           timeout: 35e3,
           encoding: "utf8",
-          stdio: ["pipe", "pipe", "pipe"],
-        },
+          stdio: ["pipe", "pipe", "pipe"]
+        }
       );
       const checkResult = JSON.parse(result);
       if (checkResult.has_errors) {
         const errorLines = [];
         errorLines.push(
-          `\u26A0\uFE0F TypeScript Pre-flight Check: ${checkResult.summary}`,
+          `\u26A0\uFE0F TypeScript Pre-flight Check: ${checkResult.summary}`
         );
         errorLines.push("");
         if (checkResult.tsc_errors?.length > 0) {
@@ -86,18 +85,14 @@ async function main() {
         console.log(
           JSON.stringify({
             decision: "block",
-            reason: errorLines.join("\n"),
-          }),
+            reason: errorLines.join("\n")
+          })
         );
         return;
       }
       console.log(JSON.stringify({}));
     } catch (checkError) {
-      if (
-        checkError &&
-        typeof checkError === "object" &&
-        "status" in checkError
-      ) {
+      if (checkError && typeof checkError === "object" && "status" in checkError) {
         const execError = checkError;
         if (execError.stdout) {
           try {
@@ -108,12 +103,13 @@ async function main() {
                   decision: "block",
                   reason: `\u26A0\uFE0F TypeScript Pre-flight: ${checkResult.summary}
 
-Fix before proceeding.`,
-                }),
+Fix before proceeding.`
+                })
               );
               return;
             }
-          } catch {}
+          } catch {
+          }
         }
       }
       console.log(JSON.stringify({}));

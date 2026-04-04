@@ -2,9 +2,7 @@
 import { readFileSync, existsSync, unlinkSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
-var STATE_DIR = process.env.CLAUDE_PROJECT_DIR
-  ? join(process.env.CLAUDE_PROJECT_DIR, ".claude", "cache", "lean")
-  : join(tmpdir(), "claude-lean");
+var STATE_DIR = process.env.CLAUDE_PROJECT_DIR ? join(process.env.CLAUDE_PROJECT_DIR, ".claude", "cache", "lean") : join(tmpdir(), "claude-lean");
 var STATE_FILE = join(STATE_DIR, "compiler-state.json");
 var MAX_STATE_AGE_MS = 5 * 60 * 1e3;
 function readStdin() {
@@ -86,8 +84,8 @@ Fix the errors and re-write the file.
   console.log(
     JSON.stringify({
       decision: "block",
-      reason: repairPrompt,
-    }),
+      reason: repairPrompt
+    })
   );
 }
 main().catch((err) => {

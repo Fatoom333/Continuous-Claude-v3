@@ -10,20 +10,12 @@ function resolveProjectDir(projectDir) {
 }
 function getLockPath(projectDir) {
   const resolvedPath = resolveProjectDir(projectDir);
-  const hash = crypto
-    .createHash("md5")
-    .update(resolvedPath)
-    .digest("hex")
-    .substring(0, 8);
+  const hash = crypto.createHash("md5").update(resolvedPath).digest("hex").substring(0, 8);
   return `${tmpdir()}/tldr-${hash}.lock`;
 }
 function getPidPath(projectDir) {
   const resolvedPath = resolveProjectDir(projectDir);
-  const hash = crypto
-    .createHash("md5")
-    .update(resolvedPath)
-    .digest("hex")
-    .substring(0, 8);
+  const hash = crypto.createHash("md5").update(resolvedPath).digest("hex").substring(0, 8);
   return `${tmpdir()}/tldr-${hash}.pid`;
 }
 function isDaemonProcessRunning(projectDir) {
@@ -49,7 +41,8 @@ function tryAcquireLock(projectDir) {
       }
       try {
         unlinkSync(lockPath);
-      } catch {}
+      } catch {
+      }
     }
     writeFileSync(lockPath, Date.now().toString(), { flag: "wx" });
     return true;
@@ -60,18 +53,15 @@ function tryAcquireLock(projectDir) {
 function releaseLock(projectDir) {
   try {
     unlinkSync(getLockPath(projectDir));
-  } catch {}
+  } catch {
+  }
 }
 var QUERY_TIMEOUT = 3e3;
 function getConnectionInfo(projectDir) {
   const resolvedPath = resolveProjectDir(projectDir);
-  const hash = crypto
-    .createHash("md5")
-    .update(resolvedPath)
-    .digest("hex")
-    .substring(0, 8);
+  const hash = crypto.createHash("md5").update(resolvedPath).digest("hex").substring(0, 8);
   if (process.platform === "win32") {
-    const port = 49152 + (parseInt(hash, 16) % 1e4);
+    const port = 49152 + parseInt(hash, 16) % 1e4;
     return { type: "tcp", host: "127.0.0.1", port };
   } else {
     return { type: "unix", path: `${tmpdir()}/tldr-${hash}.sock` };
@@ -79,11 +69,7 @@ function getConnectionInfo(projectDir) {
 }
 function getSocketPath(projectDir) {
   const resolvedPath = resolveProjectDir(projectDir);
-  const hash = crypto
-    .createHash("md5")
-    .update(resolvedPath)
-    .digest("hex")
-    .substring(0, 8);
+  const hash = crypto.createHash("md5").update(resolvedPath).digest("hex").substring(0, 8);
   return `${tmpdir()}/tldr-${hash}.sock`;
 }
 function getStatusFile(projectDir) {
@@ -116,7 +102,8 @@ function isDaemonReachable(projectDir) {
       });
       testSocket.connect(connInfo.port, connInfo.host);
       const end = Date.now() + 200;
-      while (Date.now() < end && !connected) {}
+      while (Date.now() < end && !connected) {
+      }
       return connected;
     } catch {
       return false;
@@ -131,7 +118,7 @@ function isDaemonReachable(projectDir) {
           encoding: "utf-8",
           timeout: 1e3,
           // Increased from 500ms
-          stdio: ["pipe", "pipe", "pipe"],
+          stdio: ["pipe", "pipe", "pipe"]
         });
         return true;
       } catch {
@@ -142,13 +129,14 @@ function isDaemonReachable(projectDir) {
       execSync(`echo '{"cmd":"ping"}' | nc -U "${connInfo.path}"`, {
         encoding: "utf-8",
         timeout: 500,
-        stdio: ["pipe", "pipe", "pipe"],
+        stdio: ["pipe", "pipe", "pipe"]
       });
       return true;
     } catch {
       try {
         unlinkSync(connInfo.path);
-      } catch {}
+      } catch {
+      }
       return false;
     }
   }
@@ -164,18 +152,14 @@ function tryStartDaemon(projectDir) {
     if (!tryAcquireLock(projectDir)) {
       const start = Date.now();
       while (Date.now() - start < 5e3) {
-        if (
-          isDaemonProcessRunning(projectDir) ||
-          isDaemonReachable(projectDir)
-        ) {
+        if (isDaemonProcessRunning(projectDir) || isDaemonReachable(projectDir)) {
           return true;
         }
         const end = Date.now() + 100;
-        while (Date.now() < end) {}
+        while (Date.now() < end) {
+        }
       }
-      return (
-        isDaemonProcessRunning(projectDir) || isDaemonReachable(projectDir)
-      );
+      return isDaemonProcessRunning(projectDir) || isDaemonReachable(projectDir);
     }
     try {
       const tldrPath = join(projectDir, "opc", "packages", "tldr-code");
@@ -187,26 +171,28 @@ function tryStartDaemon(projectDir) {
           {
             timeout: 1e4,
             stdio: "ignore",
-            cwd: tldrPath,
-          },
+            cwd: tldrPath
+          }
         );
         started = result.status === 0;
       }
       if (!started && !process.env.TLDR_DEV) {
         spawnSync("tldr", ["daemon", "start", "--project", projectDir], {
           timeout: 5e3,
-          stdio: "ignore",
+          stdio: "ignore"
         });
       }
       const start = Date.now();
       while (Date.now() - start < 1e4) {
         if (isDaemonReachable(projectDir)) {
           const cooldown = Date.now() + 1e3;
-          while (Date.now() < cooldown) {}
+          while (Date.now() < cooldown) {
+          }
           return true;
         }
         const end = Date.now() + 100;
-        while (Date.now() < end) {}
+        while (Date.now() < end) {
+        }
       }
       return isDaemonReachable(projectDir);
     } finally {
@@ -222,7 +208,7 @@ function queryDaemon(query, projectDir) {
       resolve2({
         indexing: true,
         status: "indexing",
-        message: "Daemon is still indexing, results may be incomplete",
+        message: "Daemon is still indexing, results may be incomplete"
       });
       return;
     }
@@ -231,7 +217,7 @@ function queryDaemon(query, projectDir) {
       if (!tryStartDaemon(projectDir)) {
         resolve2({
           status: "unavailable",
-          error: "Daemon not running and could not start",
+          error: "Daemon not running and could not start"
         });
         return;
       }
@@ -267,7 +253,7 @@ function queryDaemon(query, projectDir) {
           } catch {
             resolve2({
               status: "error",
-              error: "Invalid JSON response from daemon",
+              error: "Invalid JSON response from daemon"
             });
           }
         }
@@ -277,10 +263,7 @@ function queryDaemon(query, projectDir) {
       if (!resolved) {
         resolved = true;
         clearTimeout(timer);
-        if (
-          err.message.includes("ECONNREFUSED") ||
-          err.message.includes("ENOENT")
-        ) {
+        if (err.message.includes("ECONNREFUSED") || err.message.includes("ENOENT")) {
           resolve2({ status: "unavailable", error: "Daemon not running" });
         } else {
           resolve2({ status: "error", error: err.message });
@@ -300,7 +283,7 @@ function queryDaemon(query, projectDir) {
         } else {
           resolve2({
             status: "error",
-            error: "Connection closed without response",
+            error: "Connection closed without response"
           });
         }
       }
@@ -312,7 +295,7 @@ function queryDaemonSync(query, projectDir) {
     return {
       indexing: true,
       status: "indexing",
-      message: "Daemon is still indexing, results may be incomplete",
+      message: "Daemon is still indexing, results may be incomplete"
     };
   }
   const connInfo = getConnectionInfo(projectDir);
@@ -320,7 +303,7 @@ function queryDaemonSync(query, projectDir) {
     if (!tryStartDaemon(projectDir)) {
       return {
         status: "unavailable",
-        error: "Daemon not running and could not start",
+        error: "Daemon not running and could not start"
       };
     }
   }
@@ -343,13 +326,13 @@ function queryDaemonSync(query, projectDir) {
         `powershell -Command "${psCommand.replace(/"/g, '\\"')}"`,
         {
           encoding: "utf-8",
-          timeout: QUERY_TIMEOUT,
-        },
+          timeout: QUERY_TIMEOUT
+        }
       );
     } else {
       result = execSync(`echo '${input}' | nc -U "${connInfo.path}"`, {
         encoding: "utf-8",
-        timeout: QUERY_TIMEOUT,
+        timeout: QUERY_TIMEOUT
       });
     }
     return JSON.parse(result.trim());
@@ -357,10 +340,7 @@ function queryDaemonSync(query, projectDir) {
     if (err.killed) {
       return { status: "error", error: "timeout" };
     }
-    if (
-      err.message?.includes("ECONNREFUSED") ||
-      err.message?.includes("ENOENT")
-    ) {
+    if (err.message?.includes("ECONNREFUSED") || err.message?.includes("ENOENT")) {
       return { status: "unavailable", error: "Daemon not running" };
     }
     return { status: "error", error: err.message || "Unknown error" };
@@ -373,21 +353,21 @@ async function pingDaemon(projectDir) {
 async function searchDaemon(pattern, projectDir, maxResults = 100) {
   const response = await queryDaemon(
     { cmd: "search", pattern, max_results: maxResults },
-    projectDir,
+    projectDir
   );
   return response.results || [];
 }
 async function impactDaemon(funcName, projectDir) {
   const response = await queryDaemon(
     { cmd: "impact", func: funcName },
-    projectDir,
+    projectDir
   );
   return response.callers || [];
 }
 async function extractDaemon(filePath, projectDir, sessionId) {
   const response = await queryDaemon(
     { cmd: "extract", file: filePath, session: sessionId },
-    projectDir,
+    projectDir
   );
   return response.result || null;
 }
@@ -397,7 +377,7 @@ async function statusDaemon(projectDir) {
 async function deadCodeDaemon(projectDir, entryPoints, language = "python") {
   const response = await queryDaemon(
     { cmd: "dead", entry_points: entryPoints, language },
-    projectDir,
+    projectDir
   );
   return response.result || response;
 }
@@ -408,25 +388,18 @@ async function archDaemon(projectDir, language = "python") {
 async function cfgDaemon(filePath, funcName, projectDir, language = "python") {
   const response = await queryDaemon(
     { cmd: "cfg", file: filePath, function: funcName, language },
-    projectDir,
+    projectDir
   );
   return response.result || response;
 }
 async function dfgDaemon(filePath, funcName, projectDir, language = "python") {
   const response = await queryDaemon(
     { cmd: "dfg", file: filePath, function: funcName, language },
-    projectDir,
+    projectDir
   );
   return response.result || response;
 }
-async function sliceDaemon(
-  filePath,
-  funcName,
-  line,
-  projectDir,
-  direction = "backward",
-  variable,
-) {
+async function sliceDaemon(filePath, funcName, line, projectDir, direction = "backward", variable) {
   const response = await queryDaemon(
     {
       cmd: "slice",
@@ -434,9 +407,9 @@ async function sliceDaemon(
       function: funcName,
       line,
       direction,
-      variable,
+      variable
     },
-    projectDir,
+    projectDir
   );
   return response;
 }
@@ -450,50 +423,41 @@ async function warmDaemon(projectDir, language = "python") {
 async function semanticSearchDaemon(projectDir, query, k = 10) {
   const response = await queryDaemon(
     { cmd: "semantic", action: "search", query, k },
-    projectDir,
+    projectDir
   );
   return response.results || [];
 }
 async function semanticIndexDaemon(projectDir, language = "python") {
   return queryDaemon(
     { cmd: "semantic", action: "index", language },
-    projectDir,
+    projectDir
   );
 }
 async function treeDaemon(projectDir, extensions, excludeHidden = true) {
   const response = await queryDaemon(
     { cmd: "tree", extensions, exclude_hidden: excludeHidden },
-    projectDir,
+    projectDir
   );
   return response.result || response;
 }
-async function structureDaemon(
-  projectDir,
-  language = "python",
-  maxResults = 100,
-) {
+async function structureDaemon(projectDir, language = "python", maxResults = 100) {
   const response = await queryDaemon(
     { cmd: "structure", language, max_results: maxResults },
-    projectDir,
+    projectDir
   );
   return response.result || response;
 }
-async function contextDaemon(
-  projectDir,
-  entry,
-  language = "python",
-  depth = 2,
-) {
+async function contextDaemon(projectDir, entry, language = "python", depth = 2) {
   const response = await queryDaemon(
     { cmd: "context", entry, language, depth },
-    projectDir,
+    projectDir
   );
   return response.result || response;
 }
 async function importsDaemon(projectDir, filePath, language = "python") {
   const response = await queryDaemon(
     { cmd: "imports", file: filePath, language },
-    projectDir,
+    projectDir
   );
   return response.imports || [];
 }
@@ -503,21 +467,18 @@ async function importersDaemon(projectDir, module, language = "python") {
 function trackHookActivity(hookName, projectDir, success = true, metrics = {}) {
   queryDaemon(
     { cmd: "track", hook: hookName, success, metrics },
-    projectDir,
-  ).catch(() => {});
+    projectDir
+  ).catch(() => {
+  });
 }
-function trackHookActivitySync(
-  hookName,
-  projectDir,
-  success = true,
-  metrics = {},
-) {
+function trackHookActivitySync(hookName, projectDir, success = true, metrics = {}) {
   try {
     queryDaemonSync(
       { cmd: "track", hook: hookName, success, metrics },
-      projectDir,
+      projectDir
     );
-  } catch {}
+  } catch {
+  }
 }
 export {
   archDaemon,
@@ -547,5 +508,5 @@ export {
   trackHookActivitySync,
   treeDaemon,
   tryStartDaemon,
-  warmDaemon,
+  warmDaemon
 };

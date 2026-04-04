@@ -20,7 +20,7 @@ var AMBIGUOUS_KEYWORDS = /* @__PURE__ */ new Set([
   "analyze",
   "document",
   "refactor",
-  "optimize",
+  "optimize"
 ]);
 var SPECIFIC_TECHNICAL_TERMS = /* @__PURE__ */ new Set([
   "sympy",
@@ -37,7 +37,7 @@ var SPECIFIC_TECHNICAL_TERMS = /* @__PURE__ */ new Set([
   "mathlib",
   "z3",
   "shapely",
-  "pint",
+  "pint"
 ]);
 var TECHNICAL_CONTEXT_INDICATORS = {
   commit: [
@@ -48,7 +48,7 @@ var TECHNICAL_CONTEXT_INDICATORS = {
     "push",
     "repository",
     "branch",
-    "staged",
+    "staged"
   ],
   push: ["git", "remote", "origin", "branch", "repository", "upstream"],
   pull: ["git", "remote", "origin", "branch", "merge", "rebase", "request"],
@@ -63,7 +63,7 @@ var TECHNICAL_CONTEXT_INDICATORS = {
     "stack trace",
     "exception",
     "crash",
-    "breakpoint",
+    "breakpoint"
   ],
   build: [
     "npm",
@@ -73,7 +73,7 @@ var TECHNICAL_CONTEXT_INDICATORS = {
     "compile",
     "webpack",
     "bundle",
-    "project",
+    "project"
   ],
   implement: [
     "code",
@@ -83,7 +83,7 @@ var TECHNICAL_CONTEXT_INDICATORS = {
     "method",
     "api",
     "interface",
-    "module",
+    "module"
   ],
   plan: [
     "implementation",
@@ -91,7 +91,7 @@ var TECHNICAL_CONTEXT_INDICATORS = {
     "architecture",
     "design",
     "roadmap",
-    "milestone",
+    "milestone"
   ],
   research: [
     "api",
@@ -100,7 +100,7 @@ var TECHNICAL_CONTEXT_INDICATORS = {
     "docs",
     "best practices",
     "pattern",
-    "codebase",
+    "codebase"
   ],
   deploy: [
     "server",
@@ -109,7 +109,7 @@ var TECHNICAL_CONTEXT_INDICATORS = {
     "kubernetes",
     "docker",
     "cloud",
-    "ci/cd",
+    "ci/cd"
   ],
   release: ["version", "tag", "changelog", "npm", "package", "publish"],
   fix: ["bug", "error", "issue", "broken", "failing", "test", "regression"],
@@ -121,14 +121,14 @@ var TECHNICAL_CONTEXT_INDICATORS = {
     "spec",
     "jest",
     "pytest",
-    "vitest",
+    "vitest"
   ],
   validate: ["input", "schema", "data", "form", "field", "type"],
   review: ["code", "pr", "pull request", "changes", "diff"],
   analyze: ["code", "codebase", "performance", "metrics", "logs"],
   document: ["api", "readme", "docs", "jsdoc", "docstring", "comments"],
   refactor: ["code", "function", "class", "module", "clean up", "simplify"],
-  optimize: ["performance", "speed", "memory", "query", "algorithm"],
+  optimize: ["performance", "speed", "memory", "query", "algorithm"]
 };
 function shouldValidateWithLLM(match) {
   if (match.matchType === "explicit") {
@@ -186,7 +186,7 @@ function parseValidationResponse(response) {
     // Fail-open: activate on parse error
     confidence: 0.4,
     reason: "Failed to parse validation response",
-    parseError: true,
+    parseError: true
   };
   try {
     const jsonMatch = response.match(/\{[\s\S]*?\}/);
@@ -200,12 +200,8 @@ function parseValidationResponse(response) {
     }
     return {
       decision,
-      confidence:
-        typeof parsed.confidence === "number" ? parsed.confidence : 0.5,
-      reason:
-        typeof parsed.reason === "string"
-          ? parsed.reason
-          : "No reason provided",
+      confidence: typeof parsed.confidence === "number" ? parsed.confidence : 0.5,
+      reason: typeof parsed.reason === "string" ? parsed.reason : "No reason provided"
     };
   } catch (err) {
     return defaultResult;
@@ -221,15 +217,11 @@ async function validateSkillRelevance(match, llmCall) {
       decision: "activate",
       confidence: 0.3,
       reason: `Validation error: ${err instanceof Error ? err.message : "Unknown error"}`,
-      error: true,
+      error: true
     };
   }
 }
-function filterValidatedSkills(
-  matches,
-  validationResults,
-  confidenceThreshold = 0.5,
-) {
+function filterValidatedSkills(matches, validationResults, confidenceThreshold = 0.5) {
   return matches.filter((match) => {
     const result = validationResults.get(match.skillName);
     if (!result) {
@@ -249,5 +241,5 @@ export {
   filterValidatedSkills,
   parseValidationResponse,
   shouldValidateWithLLM,
-  validateSkillRelevance,
+  validateSkillRelevance
 };

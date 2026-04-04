@@ -14,20 +14,12 @@ function resolveProjectDir(projectDir) {
 }
 function getLockPath(projectDir) {
   const resolvedPath = resolveProjectDir(projectDir);
-  const hash = crypto
-    .createHash("md5")
-    .update(resolvedPath)
-    .digest("hex")
-    .substring(0, 8);
+  const hash = crypto.createHash("md5").update(resolvedPath).digest("hex").substring(0, 8);
   return `${tmpdir()}/tldr-${hash}.lock`;
 }
 function getPidPath(projectDir) {
   const resolvedPath = resolveProjectDir(projectDir);
-  const hash = crypto
-    .createHash("md5")
-    .update(resolvedPath)
-    .digest("hex")
-    .substring(0, 8);
+  const hash = crypto.createHash("md5").update(resolvedPath).digest("hex").substring(0, 8);
   return `${tmpdir()}/tldr-${hash}.pid`;
 }
 function isDaemonProcessRunning(projectDir) {
@@ -53,7 +45,8 @@ function tryAcquireLock(projectDir) {
       }
       try {
         unlinkSync(lockPath);
-      } catch {}
+      } catch {
+      }
     }
     writeFileSync(lockPath, Date.now().toString(), { flag: "wx" });
     return true;
@@ -64,18 +57,15 @@ function tryAcquireLock(projectDir) {
 function releaseLock(projectDir) {
   try {
     unlinkSync(getLockPath(projectDir));
-  } catch {}
+  } catch {
+  }
 }
 var QUERY_TIMEOUT = 3e3;
 function getConnectionInfo(projectDir) {
   const resolvedPath = resolveProjectDir(projectDir);
-  const hash = crypto
-    .createHash("md5")
-    .update(resolvedPath)
-    .digest("hex")
-    .substring(0, 8);
+  const hash = crypto.createHash("md5").update(resolvedPath).digest("hex").substring(0, 8);
   if (process.platform === "win32") {
-    const port = 49152 + (parseInt(hash, 16) % 1e4);
+    const port = 49152 + parseInt(hash, 16) % 1e4;
     return { type: "tcp", host: "127.0.0.1", port };
   } else {
     return { type: "unix", path: `${tmpdir()}/tldr-${hash}.sock` };
@@ -111,7 +101,8 @@ function isDaemonReachable(projectDir) {
       });
       testSocket.connect(connInfo.port, connInfo.host);
       const end = Date.now() + 200;
-      while (Date.now() < end && !connected) {}
+      while (Date.now() < end && !connected) {
+      }
       return connected;
     } catch {
       return false;
@@ -126,7 +117,7 @@ function isDaemonReachable(projectDir) {
           encoding: "utf-8",
           timeout: 1e3,
           // Increased from 500ms
-          stdio: ["pipe", "pipe", "pipe"],
+          stdio: ["pipe", "pipe", "pipe"]
         });
         return true;
       } catch {
@@ -137,13 +128,14 @@ function isDaemonReachable(projectDir) {
       execSync(`echo '{"cmd":"ping"}' | nc -U "${connInfo.path}"`, {
         encoding: "utf-8",
         timeout: 500,
-        stdio: ["pipe", "pipe", "pipe"],
+        stdio: ["pipe", "pipe", "pipe"]
       });
       return true;
     } catch {
       try {
         unlinkSync(connInfo.path);
-      } catch {}
+      } catch {
+      }
       return false;
     }
   }
@@ -159,18 +151,14 @@ function tryStartDaemon(projectDir) {
     if (!tryAcquireLock(projectDir)) {
       const start = Date.now();
       while (Date.now() - start < 5e3) {
-        if (
-          isDaemonProcessRunning(projectDir) ||
-          isDaemonReachable(projectDir)
-        ) {
+        if (isDaemonProcessRunning(projectDir) || isDaemonReachable(projectDir)) {
           return true;
         }
         const end = Date.now() + 100;
-        while (Date.now() < end) {}
+        while (Date.now() < end) {
+        }
       }
-      return (
-        isDaemonProcessRunning(projectDir) || isDaemonReachable(projectDir)
-      );
+      return isDaemonProcessRunning(projectDir) || isDaemonReachable(projectDir);
     }
     try {
       const tldrPath = join(projectDir, "opc", "packages", "tldr-code");
@@ -182,26 +170,28 @@ function tryStartDaemon(projectDir) {
           {
             timeout: 1e4,
             stdio: "ignore",
-            cwd: tldrPath,
-          },
+            cwd: tldrPath
+          }
         );
         started = result.status === 0;
       }
       if (!started && !process.env.TLDR_DEV) {
         spawnSync("tldr", ["daemon", "start", "--project", projectDir], {
           timeout: 5e3,
-          stdio: "ignore",
+          stdio: "ignore"
         });
       }
       const start = Date.now();
       while (Date.now() - start < 1e4) {
         if (isDaemonReachable(projectDir)) {
           const cooldown = Date.now() + 1e3;
-          while (Date.now() < cooldown) {}
+          while (Date.now() < cooldown) {
+          }
           return true;
         }
         const end = Date.now() + 100;
-        while (Date.now() < end) {}
+        while (Date.now() < end) {
+        }
       }
       return isDaemonReachable(projectDir);
     } finally {
@@ -216,7 +206,7 @@ function queryDaemonSync(query, projectDir) {
     return {
       indexing: true,
       status: "indexing",
-      message: "Daemon is still indexing, results may be incomplete",
+      message: "Daemon is still indexing, results may be incomplete"
     };
   }
   const connInfo = getConnectionInfo(projectDir);
@@ -224,7 +214,7 @@ function queryDaemonSync(query, projectDir) {
     if (!tryStartDaemon(projectDir)) {
       return {
         status: "unavailable",
-        error: "Daemon not running and could not start",
+        error: "Daemon not running and could not start"
       };
     }
   }
@@ -247,13 +237,13 @@ function queryDaemonSync(query, projectDir) {
         `powershell -Command "${psCommand.replace(/"/g, '\\"')}"`,
         {
           encoding: "utf-8",
-          timeout: QUERY_TIMEOUT,
-        },
+          timeout: QUERY_TIMEOUT
+        }
       );
     } else {
       result = execSync(`echo '${input}' | nc -U "${connInfo.path}"`, {
         encoding: "utf-8",
-        timeout: QUERY_TIMEOUT,
+        timeout: QUERY_TIMEOUT
       });
     }
     return JSON.parse(result.trim());
@@ -261,27 +251,20 @@ function queryDaemonSync(query, projectDir) {
     if (err.killed) {
       return { status: "error", error: "timeout" };
     }
-    if (
-      err.message?.includes("ECONNREFUSED") ||
-      err.message?.includes("ENOENT")
-    ) {
+    if (err.message?.includes("ECONNREFUSED") || err.message?.includes("ENOENT")) {
       return { status: "unavailable", error: "Daemon not running" };
     }
     return { status: "error", error: err.message || "Unknown error" };
   }
 }
-function trackHookActivitySync(
-  hookName,
-  projectDir,
-  success = true,
-  metrics = {},
-) {
+function trackHookActivitySync(hookName, projectDir, success = true, metrics = {}) {
   try {
     queryDaemonSync(
       { cmd: "track", hook: hookName, success, metrics },
-      projectDir,
+      projectDir
     );
-  } catch {}
+  } catch {
+  }
 }
 
 // src/edit-context-inject.ts
@@ -290,13 +273,9 @@ function getTLDRImports(filePath) {
     const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
     const response = queryDaemonSync(
       { cmd: "imports", file: filePath },
-      projectDir,
+      projectDir
     );
-    if (
-      response.indexing ||
-      response.status === "unavailable" ||
-      response.status === "error"
-    ) {
+    if (response.indexing || response.status === "unavailable" || response.status === "error") {
       return [];
     }
     if (response.imports && Array.isArray(response.imports)) {
@@ -312,13 +291,9 @@ function getTLDRExtract(filePath, sessionId) {
     const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
     const response = queryDaemonSync(
       { cmd: "extract", file: filePath, session: sessionId },
-      projectDir,
+      projectDir
     );
-    if (
-      response.indexing ||
-      response.status === "unavailable" ||
-      response.status === "error"
-    ) {
+    if (response.indexing || response.status === "unavailable" || response.status === "error") {
       return null;
     }
     if (response.result) {
@@ -354,13 +329,13 @@ async function main() {
   if (importCount > 0) {
     const importModules = imports.slice(0, 8).map((i) => i.module);
     parts.push(
-      `Dependencies: ${importModules.join(", ")}${importCount > 8 ? "..." : ""}`,
+      `Dependencies: ${importModules.join(", ")}${importCount > 8 ? "..." : ""}`
     );
   }
   if (classCount > 0 && extract) {
     const classNames = extract.classes.map((c) => c.name).slice(0, 10);
     parts.push(
-      `Classes: ${classNames.join(", ")}${classCount > 10 ? "..." : ""}`,
+      `Classes: ${classNames.join(", ")}${classCount > 10 ? "..." : ""}`
     );
   }
   if (funcCount > 0 && extract) {
@@ -369,7 +344,7 @@ async function main() {
       return paramCount > 0 ? `${f.name}(${paramCount})` : f.name;
     });
     parts.push(
-      `Functions: ${funcSummaries.join(", ")}${funcCount > 12 ? "..." : ""}`,
+      `Functions: ${funcSummaries.join(", ")}${funcCount > 12 ? "..." : ""}`
     );
   }
   const symbolInfo = total > 0 ? `${total} symbols` : "";
@@ -379,13 +354,13 @@ async function main() {
     hookSpecificOutput: {
       hookEventName: "PreToolUse",
       additionalContext: `[Edit context: ${basename(filePath)} - ${summary}]
-${parts.join("\n")}`,
-    },
+${parts.join("\n")}`
+    }
   };
   const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
   trackHookActivitySync("edit-context-inject", projectDir, true, {
     edits_processed: 1,
-    symbols_shown: total,
+    symbols_shown: total
   });
   console.log(JSON.stringify(output));
 }

@@ -5,7 +5,7 @@ import { spawn } from "child_process";
 var EXTRACTOR_LOCK = path.join(
   process.env.HOME || process.env.USERPROFILE || "",
   ".claude",
-  "braintrust-extractor.lock",
+  "braintrust-extractor.lock"
 );
 var LOCK_MAX_AGE_MS = 5 * 60 * 1e3;
 function isExtractorRunning() {
@@ -31,7 +31,8 @@ function isExtractorRunning() {
   } catch {
     try {
       fs.unlinkSync(EXTRACTOR_LOCK);
-    } catch {}
+    } catch {
+    }
     return false;
   }
 }
@@ -42,16 +43,15 @@ function createExtractorLock(pid) {
       fs.mkdirSync(lockDir, { recursive: true });
     }
     fs.writeFileSync(EXTRACTOR_LOCK, `${pid}:${Date.now()}`);
-  } catch {}
+  } catch {
+  }
 }
 async function main() {
   const input = JSON.parse(await readStdin());
   const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
   try {
     const ledgerDir = path.join(projectDir, "thoughts", "ledgers");
-    const ledgerFiles = fs
-      .readdirSync(ledgerDir)
-      .filter((f) => f.startsWith("CONTINUITY_CLAUDE-") && f.endsWith(".md"));
+    const ledgerFiles = fs.readdirSync(ledgerDir).filter((f) => f.startsWith("CONTINUITY_CLAUDE-") && f.endsWith(".md"));
     if (ledgerFiles.length > 0) {
       const mostRecent = ledgerFiles.sort((a, b) => {
         const statA = fs.statSync(path.join(ledgerDir, a));
@@ -60,7 +60,7 @@ async function main() {
       })[0];
       const ledgerPath = path.join(ledgerDir, mostRecent);
       let content = fs.readFileSync(ledgerPath, "utf-8");
-      const timestamp = /* @__PURE__ */ new Date().toISOString();
+      const timestamp = (/* @__PURE__ */ new Date()).toISOString();
       content = content.replace(/Updated: .*/, `Updated: ${timestamp}`);
       fs.writeFileSync(ledgerPath, content);
     }
@@ -90,13 +90,13 @@ async function main() {
     const learnScript = path.join(
       projectDir,
       "scripts",
-      "braintrust_analyze.py",
+      "braintrust_analyze.py"
     );
     const globalScript = path.join(
       process.env.HOME || process.env.USERPROFILE || "",
       ".claude",
       "scripts",
-      "braintrust_analyze.py",
+      "braintrust_analyze.py"
     );
     const scriptPath = fs.existsSync(learnScript) ? learnScript : globalScript;
     if (fs.existsSync(scriptPath)) {
@@ -105,33 +105,31 @@ async function main() {
         return;
       }
       const isGlobalScript = scriptPath === globalScript;
-      const args = isGlobalScript
-        ? [
-            "run",
-            "--with",
-            "braintrust",
-            "--with",
-            "openai",
-            "--with",
-            "aiohttp",
-            "python",
-            scriptPath,
-            "--learn",
-            "--session-id",
-            input.session_id,
-          ]
-        : [
-            "run",
-            "python",
-            scriptPath,
-            "--learn",
-            "--session-id",
-            input.session_id,
-          ];
+      const args = isGlobalScript ? [
+        "run",
+        "--with",
+        "braintrust",
+        "--with",
+        "openai",
+        "--with",
+        "aiohttp",
+        "python",
+        scriptPath,
+        "--learn",
+        "--session-id",
+        input.session_id
+      ] : [
+        "run",
+        "python",
+        scriptPath,
+        "--learn",
+        "--session-id",
+        input.session_id
+      ];
       const child = spawn("uv", args, {
         cwd: projectDir,
         detached: true,
-        stdio: "ignore",
+        stdio: "ignore"
       });
       if (child.pid) {
         createExtractorLock(child.pid);
@@ -146,7 +144,7 @@ async function main() {
 async function readStdin() {
   return new Promise((resolve) => {
     let data = "";
-    process.stdin.on("data", (chunk) => (data += chunk));
+    process.stdin.on("data", (chunk) => data += chunk);
     process.stdin.on("end", () => resolve(data));
   });
 }

@@ -36,7 +36,7 @@ function extractIntent(prompt) {
     /^(show me|tell me|find|search for|look for|recall|remember)\s+/gi,
     /^(how do i|how can i|how to|what is|what are|where is|where are)\s+/gi,
     /\s+(for me|please|thanks|thank you)$/gi,
-    /\?$/g,
+    /\?$/g
   ];
   let intent = prompt.trim();
   for (const pattern of metaPhrases) {
@@ -182,24 +182,16 @@ function extractKeywords(prompt) {
     "remember",
     "similar",
     "problems",
-    "issues",
+    "issues"
   ]);
-  const words = prompt
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, " ")
-    .split(/\s+/)
-    .filter((w) => w.length > 2 && !stopWords.has(w));
+  const words = prompt.toLowerCase().replace(/[^\w\s-]/g, " ").split(/\s+/).filter((w) => w.length > 2 && !stopWords.has(w));
   return [...new Set(words)].slice(0, 5).join(" ");
 }
 function checkMemoryRelevance(intent, projectDir) {
   if (!intent || intent.length < 3) return null;
   const opcDir = getOpcDir();
   if (!opcDir) return null;
-  const searchTerm = intent
-    .replace(/[_\/]/g, " ")
-    .replace(/\b\w{1,2}\b/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+  const searchTerm = intent.replace(/[_\/]/g, " ").replace(/\b\w{1,2}\b/g, "").replace(/\s+/g, " ").trim();
   const result = spawnSync(
     "uv",
     [
@@ -212,7 +204,7 @@ function checkMemoryRelevance(intent, projectDir) {
       "--k",
       "3",
       "--json",
-      "--text-only",
+      "--text-only"
       // Fast text search for hints
     ],
     {
@@ -220,11 +212,11 @@ function checkMemoryRelevance(intent, projectDir) {
       cwd: opcDir,
       env: {
         ...process.env,
-        PYTHONPATH: opcDir,
+        PYTHONPATH: opcDir
       },
-      timeout: 5e3,
+      timeout: 5e3
       // 5s timeout for fast check
-    },
+    }
   );
   if (result.status !== 0 || !result.stdout) {
     return null;
@@ -236,22 +228,17 @@ function checkMemoryRelevance(intent, projectDir) {
     }
     const results = data.results.slice(0, 3).map((r) => {
       const content = r.content || "";
-      const preview = content
-        .split("\n")
-        .filter((l) => l.trim().length > 0)
-        .map((l) => l.trim())
-        .join(" ")
-        .slice(0, 120);
+      const preview = content.split("\n").filter((l) => l.trim().length > 0).map((l) => l.trim()).join(" ").slice(0, 120);
       return {
         id: (r.id || "unknown").slice(0, 8),
         type: r.learning_type || r.type || "UNKNOWN",
         content: preview + (content.length > 120 ? "..." : ""),
-        score: r.score || 0,
+        score: r.score || 0
       };
     });
     return {
       count: data.results.length,
-      results,
+      results
     };
   } catch {
     return null;
@@ -275,9 +262,7 @@ async function main() {
   }
   const match = checkMemoryRelevance(intent, projectDir);
   if (match) {
-    const resultLines = match.results
-      .map((r, i) => `${i + 1}. [${r.type}] ${r.content} (id: ${r.id})`)
-      .join("\n");
+    const resultLines = match.results.map((r, i) => `${i + 1}. [${r.type}] ${r.content} (id: ${r.id})`).join("\n");
     const claudeContext = `MEMORY MATCH (${match.count} results) for "${intent}":
 ${resultLines}
 Use /recall "${intent}" for full content. Disclose if helpful.`;
@@ -285,10 +270,11 @@ Use /recall "${intent}" for full content. Disclose if helpful.`;
       JSON.stringify({
         hookSpecificOutput: {
           hookEventName: "UserPromptSubmit",
-          additionalContext: claudeContext,
-        },
-      }),
+          additionalContext: claudeContext
+        }
+      })
     );
   }
 }
-main().catch(() => {});
+main().catch(() => {
+});

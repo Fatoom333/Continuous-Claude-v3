@@ -1,0 +1,81 @@
+# Parallel Hook Configuration
+#
+# Defines which hooks can run in parallel groups.
+# Hooks in the same group execute concurrently.
+
+parallel_groups:
+  # PostToolUse hooks for TypeScript/Edit files
+  # These are independent and can run in parallel
+  post_tool_use_edit:
+    matcher: "Edit|Write"
+    trigger: "PostToolUse"
+    parallel_hooks:
+      - name: "typescript-preflight"
+        command: "node $HOME/.claude/hooks/dist/typescript-preflight.mjs"
+        timeout: 40000
+      - name: "compiler-in-the-loop"
+        command: "node $HOME/.claude/hooks/dist/compiler-in-the-loop.mjs"
+        timeout: 30000
+      - name: "post-edit-notify"
+        command: "node $HOME/.claude/hooks/dist/post-edit-notify.mjs"
+        timeout: 5000
+      - name: "post-edit-diagnostics"
+        command: "node $HOME/.claude/hooks/dist/post-edit-diagnostics.mjs"
+        timeout: 10000
+      - name: "import-validator"
+        command: "node $HOME/.claude/hooks/dist/import-validator.mjs"
+        timeout: 5000
+    sequential_after:
+      - command: "uv run $HOME/.claude/hooks/hook_launcher.py post-tool-use-tracker"
+        timeout: 120000
+
+  # PreToolUse hooks for Read operations
+  pre_tool_use_read:
+    matcher: "Read"
+    trigger: "PreToolUse"
+    parallel_hooks:
+      - name: "path-rules"
+        command: "node $HOME/.claude/hooks/dist/path-rules.mjs"
+        timeout: 5000
+      - name: "tldr-read-enforcer"
+        command: "node $HOME/.claude/hooks/dist/tldr-read-enforcer.mjs"
+        timeout: 20000
+
+  # PreToolUse hooks for Edit operations
+  pre_tool_use_edit:
+    matcher: "Edit"
+    trigger: "PreToolUse"
+    parallel_hooks:
+      - name: "path-rules"
+        command: "node $HOME/.claude/hooks/dist/path-rules.mjs"
+        timeout: 5000
+      - name: "file-claims"
+        command: "node $HOME/.claude/hooks/dist/file-claims.mjs"
+        timeout: 5000
+      - name: "edit-context-inject"
+        command: "node $HOME/.claude/hooks/dist/edit-context-inject.mjs"
+        timeout: 5000
+      - name: "signature-helper"
+        command: "node $HOME/.claude/hooks/dist/signature-helper.mjs"
+        timeout: 5000
+
+  # PreToolUse hooks for Task tool
+  pre_tool_use_task:
+    matcher: "Task"
+    trigger: "PreToolUse"
+    parallel_hooks:
+      - name: "tldr-context-inject"
+        command: "node $HOME/.claude/hooks/dist/tldr-context-inject.mjs"
+        timeout: 30000
+      - name: "arch-context-inject"
+        command: "node $HOME/.claude/hooks/dist/arch-context-inject.mjs"
+        timeout: 30000
+
+settings:
+  max_concurrency: 4
+  global_timeout: 60000
+  fail_fast: false
+  continue_on_error: true
+  debug: false
+  slow_hook_threshold: 5000
+  very_slow_hook_threshold: 30000

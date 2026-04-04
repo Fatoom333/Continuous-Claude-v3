@@ -14,20 +14,12 @@ function resolveProjectDir(projectDir) {
 }
 function getLockPath(projectDir) {
   const resolvedPath = resolveProjectDir(projectDir);
-  const hash = crypto
-    .createHash("md5")
-    .update(resolvedPath)
-    .digest("hex")
-    .substring(0, 8);
+  const hash = crypto.createHash("md5").update(resolvedPath).digest("hex").substring(0, 8);
   return `${tmpdir()}/tldr-${hash}.lock`;
 }
 function getPidPath(projectDir) {
   const resolvedPath = resolveProjectDir(projectDir);
-  const hash = crypto
-    .createHash("md5")
-    .update(resolvedPath)
-    .digest("hex")
-    .substring(0, 8);
+  const hash = crypto.createHash("md5").update(resolvedPath).digest("hex").substring(0, 8);
   return `${tmpdir()}/tldr-${hash}.pid`;
 }
 function isDaemonProcessRunning(projectDir) {
@@ -53,7 +45,8 @@ function tryAcquireLock(projectDir) {
       }
       try {
         unlinkSync(lockPath);
-      } catch {}
+      } catch {
+      }
     }
     writeFileSync(lockPath, Date.now().toString(), { flag: "wx" });
     return true;
@@ -64,18 +57,15 @@ function tryAcquireLock(projectDir) {
 function releaseLock(projectDir) {
   try {
     unlinkSync(getLockPath(projectDir));
-  } catch {}
+  } catch {
+  }
 }
 var QUERY_TIMEOUT = 3e3;
 function getConnectionInfo(projectDir) {
   const resolvedPath = resolveProjectDir(projectDir);
-  const hash = crypto
-    .createHash("md5")
-    .update(resolvedPath)
-    .digest("hex")
-    .substring(0, 8);
+  const hash = crypto.createHash("md5").update(resolvedPath).digest("hex").substring(0, 8);
   if (process.platform === "win32") {
-    const port = 49152 + (parseInt(hash, 16) % 1e4);
+    const port = 49152 + parseInt(hash, 16) % 1e4;
     return { type: "tcp", host: "127.0.0.1", port };
   } else {
     return { type: "unix", path: `${tmpdir()}/tldr-${hash}.sock` };
@@ -111,7 +101,8 @@ function isDaemonReachable(projectDir) {
       });
       testSocket.connect(connInfo.port, connInfo.host);
       const end = Date.now() + 200;
-      while (Date.now() < end && !connected) {}
+      while (Date.now() < end && !connected) {
+      }
       return connected;
     } catch {
       return false;
@@ -126,7 +117,7 @@ function isDaemonReachable(projectDir) {
           encoding: "utf-8",
           timeout: 1e3,
           // Increased from 500ms
-          stdio: ["pipe", "pipe", "pipe"],
+          stdio: ["pipe", "pipe", "pipe"]
         });
         return true;
       } catch {
@@ -137,13 +128,14 @@ function isDaemonReachable(projectDir) {
       execSync(`echo '{"cmd":"ping"}' | nc -U "${connInfo.path}"`, {
         encoding: "utf-8",
         timeout: 500,
-        stdio: ["pipe", "pipe", "pipe"],
+        stdio: ["pipe", "pipe", "pipe"]
       });
       return true;
     } catch {
       try {
         unlinkSync(connInfo.path);
-      } catch {}
+      } catch {
+      }
       return false;
     }
   }
@@ -159,18 +151,14 @@ function tryStartDaemon(projectDir) {
     if (!tryAcquireLock(projectDir)) {
       const start = Date.now();
       while (Date.now() - start < 5e3) {
-        if (
-          isDaemonProcessRunning(projectDir) ||
-          isDaemonReachable(projectDir)
-        ) {
+        if (isDaemonProcessRunning(projectDir) || isDaemonReachable(projectDir)) {
           return true;
         }
         const end = Date.now() + 100;
-        while (Date.now() < end) {}
+        while (Date.now() < end) {
+        }
       }
-      return (
-        isDaemonProcessRunning(projectDir) || isDaemonReachable(projectDir)
-      );
+      return isDaemonProcessRunning(projectDir) || isDaemonReachable(projectDir);
     }
     try {
       const tldrPath = join(projectDir, "opc", "packages", "tldr-code");
@@ -182,26 +170,28 @@ function tryStartDaemon(projectDir) {
           {
             timeout: 1e4,
             stdio: "ignore",
-            cwd: tldrPath,
-          },
+            cwd: tldrPath
+          }
         );
         started = result.status === 0;
       }
       if (!started && !process.env.TLDR_DEV) {
         spawnSync("tldr", ["daemon", "start", "--project", projectDir], {
           timeout: 5e3,
-          stdio: "ignore",
+          stdio: "ignore"
         });
       }
       const start = Date.now();
       while (Date.now() - start < 1e4) {
         if (isDaemonReachable(projectDir)) {
           const cooldown = Date.now() + 1e3;
-          while (Date.now() < cooldown) {}
+          while (Date.now() < cooldown) {
+          }
           return true;
         }
         const end = Date.now() + 100;
-        while (Date.now() < end) {}
+        while (Date.now() < end) {
+        }
       }
       return isDaemonReachable(projectDir);
     } finally {
@@ -216,7 +206,7 @@ function queryDaemonSync(query, projectDir) {
     return {
       indexing: true,
       status: "indexing",
-      message: "Daemon is still indexing, results may be incomplete",
+      message: "Daemon is still indexing, results may be incomplete"
     };
   }
   const connInfo = getConnectionInfo(projectDir);
@@ -224,7 +214,7 @@ function queryDaemonSync(query, projectDir) {
     if (!tryStartDaemon(projectDir)) {
       return {
         status: "unavailable",
-        error: "Daemon not running and could not start",
+        error: "Daemon not running and could not start"
       };
     }
   }
@@ -247,13 +237,13 @@ function queryDaemonSync(query, projectDir) {
         `powershell -Command "${psCommand.replace(/"/g, '\\"')}"`,
         {
           encoding: "utf-8",
-          timeout: QUERY_TIMEOUT,
-        },
+          timeout: QUERY_TIMEOUT
+        }
       );
     } else {
       result = execSync(`echo '${input}' | nc -U "${connInfo.path}"`, {
         encoding: "utf-8",
-        timeout: QUERY_TIMEOUT,
+        timeout: QUERY_TIMEOUT
       });
     }
     return JSON.parse(result.trim());
@@ -261,27 +251,20 @@ function queryDaemonSync(query, projectDir) {
     if (err.killed) {
       return { status: "error", error: "timeout" };
     }
-    if (
-      err.message?.includes("ECONNREFUSED") ||
-      err.message?.includes("ENOENT")
-    ) {
+    if (err.message?.includes("ECONNREFUSED") || err.message?.includes("ENOENT")) {
       return { status: "unavailable", error: "Daemon not running" };
     }
     return { status: "error", error: err.message || "Unknown error" };
   }
 }
-function trackHookActivitySync(
-  hookName,
-  projectDir,
-  success = true,
-  metrics = {},
-) {
+function trackHookActivitySync(hookName, projectDir, success = true, metrics = {}) {
   try {
     queryDaemonSync(
       { cmd: "track", hook: hookName, success, metrics },
-      projectDir,
+      projectDir
     );
-  } catch {}
+  } catch {
+  }
 }
 
 // src/tldr-context-inject.ts
@@ -294,10 +277,10 @@ var INTENT_PATTERNS = [
       /who\s+assigns?\s+(\w+)/i,
       /track\s+(?:the\s+)?(?:variable\s+)?(\w+)/i,
       /data\s+flow/i,
-      /variable\s+(?:origin|source)/i,
+      /variable\s+(?:origin|source)/i
     ],
     layers: ["dfg"],
-    description: "data flow analysis",
+    description: "data flow analysis"
   },
   {
     // Program slicing / dependency questions
@@ -306,10 +289,10 @@ var INTENT_PATTERNS = [
       /what\s+depends?\s+on/i,
       /slice\s+(?:at|from)/i,
       /dependencies?\s+(?:of|for)/i,
-      /impact\s+(?:of|analysis)/i,
+      /impact\s+(?:of|analysis)/i
     ],
     layers: ["pdg"],
-    description: "program slicing",
+    description: "program slicing"
   },
   {
     // Complexity / control flow questions
@@ -319,10 +302,10 @@ var INTENT_PATTERNS = [
       /control\s+flow/i,
       /branch(?:es|ing)/i,
       /cyclomatic/i,
-      /paths?\s+through/i,
+      /paths?\s+through/i
     ],
     layers: ["cfg"],
-    description: "control flow analysis",
+    description: "control flow analysis"
   },
   {
     // Structure only
@@ -330,10 +313,10 @@ var INTENT_PATTERNS = [
       /list\s+(?:all\s+)?(?:functions?|methods?|classes?)/i,
       /show\s+structure/i,
       /what\s+(?:functions?|methods?)\s+(?:are\s+)?in/i,
-      /overview\s+of/i,
+      /overview\s+of/i
     ],
     layers: ["ast"],
-    description: "structure overview",
+    description: "structure overview"
   },
   {
     // Debug / investigate (default rich context)
@@ -343,18 +326,18 @@ var INTENT_PATTERNS = [
       /fix\s+(?:the\s+)?(?:bug|issue|error)/i,
       /understand/i,
       /how\s+does?\s+(\w+)\s+work/i,
-      /explain/i,
+      /explain/i
     ],
     layers: ["call_graph", "cfg"],
-    description: "debugging context",
-  },
+    description: "debugging context"
+  }
 ];
 var FUNCTION_PATTERNS = [
   /(?:function|method|def|fn)\s+[`"']?(\w+)[`"']?/gi,
   /the\s+[`"']?(\w+)[`"']?\s+(?:function|method)/gi,
   /(?:fix|debug|investigate|look at|check|analyze)\s+[`"']?(\w+(?:\.\w+)?)[`"']?/gi,
   /[`"']?(\w+\.\w+)[`"']?/g,
-  /[`"']?([a-z][a-z0-9_]{2,})[`"']?/g,
+  /[`"']?([a-z][a-z0-9_]{2,})[`"']?/g
 ];
 var EXCLUDE_WORDS = /* @__PURE__ */ new Set([
   "the",
@@ -410,7 +393,7 @@ var EXCLUDE_WORDS = /* @__PURE__ */ new Set([
   "from",
   "affects",
   "line",
-  "variable",
+  "variable"
 ]);
 function detectIntent(prompt) {
   for (const intent of INTENT_PATTERNS) {
@@ -427,7 +410,7 @@ function detectLanguage(projectPath) {
     python: ["pyproject.toml", "setup.py", "requirements.txt", "Pipfile"],
     typescript: ["tsconfig.json", "package.json"],
     rust: ["Cargo.toml"],
-    go: ["go.mod", "go.sum"],
+    go: ["go.mod", "go.sum"]
   };
   for (const [lang, files] of Object.entries(indicators)) {
     for (const file of files) {
@@ -444,11 +427,7 @@ function extractEntryPoints(prompt) {
     let match;
     while ((match = pattern.exec(prompt)) !== null) {
       const candidate = match[1];
-      if (
-        candidate &&
-        candidate.length > 2 &&
-        !EXCLUDE_WORDS.has(candidate.toLowerCase())
-      ) {
+      if (candidate && candidate.length > 2 && !EXCLUDE_WORDS.has(candidate.toLowerCase())) {
         candidates.add(candidate);
       }
     }
@@ -469,7 +448,7 @@ function extractVariableName(prompt) {
   const patterns = [
     /where\s+does?\s+[`"']?(\w+)[`"']?\s+come\s+from/i,
     /what\s+sets?\s+[`"']?(\w+)[`"']?/i,
-    /track\s+(?:the\s+)?(?:variable\s+)?[`"']?(\w+)[`"']?/i,
+    /track\s+(?:the\s+)?(?:variable\s+)?[`"']?(\w+)[`"']?/i
   ];
   for (const pattern of patterns) {
     const match = prompt.match(pattern);
@@ -477,14 +456,7 @@ function extractVariableName(prompt) {
   }
   return null;
 }
-function getTldrContext(
-  projectPath,
-  entryPoint,
-  language,
-  layers,
-  lineNumber,
-  varName,
-) {
+function getTldrContext(projectPath, entryPoint, language, layers, lineNumber, varName) {
   const results = [];
   try {
     for (const layer of layers) {
@@ -492,15 +464,13 @@ function getTldrContext(
         case "call_graph": {
           const response = queryDaemonSync(
             { cmd: "context", entry: entryPoint, language, depth: 2 },
-            projectPath,
+            projectPath
           );
           if (response.status === "ok" && response.result) {
             const ctx = response.result;
             const lines = [`## Context: ${entryPoint}`];
             if (ctx.entry_point) {
-              lines.push(
-                `\u{1F4CD} ${ctx.entry_point.file}:${ctx.entry_point.line}`,
-              );
+              lines.push(`\u{1F4CD} ${ctx.entry_point.file}:${ctx.entry_point.line}`);
               if (ctx.entry_point.signature) {
                 lines.push(`  ${ctx.entry_point.signature}`);
               }
@@ -526,13 +496,13 @@ Called by:`);
         case "cfg": {
           const searchResp = queryDaemonSync(
             { cmd: "search", pattern: `def ${entryPoint}` },
-            projectPath,
+            projectPath
           );
           if (searchResp.results && searchResp.results.length > 0) {
             const file = searchResp.results[0].file;
             const cfgResp = queryDaemonSync(
               { cmd: "cfg", file, function: entryPoint, language },
-              projectPath,
+              projectPath
             );
             if (cfgResp.status === "ok" && cfgResp.result) {
               const cfg = cfgResp.result;
@@ -542,7 +512,7 @@ Called by:`);
               if (cfg.blocks && Array.isArray(cfg.blocks)) {
                 for (const b of cfg.blocks.slice(0, 8)) {
                   lines.push(
-                    `  Block ${b.id}: lines ${b.start_line}-${b.end_line} (${b.block_type})`,
+                    `  Block ${b.id}: lines ${b.start_line}-${b.end_line} (${b.block_type})`
                   );
                 }
               }
@@ -555,13 +525,13 @@ Called by:`);
           const funcForDfg = entryPoint.split(".").pop() || entryPoint;
           const searchResp = queryDaemonSync(
             { cmd: "search", pattern: `def ${funcForDfg}` },
-            projectPath,
+            projectPath
           );
           if (searchResp.results && searchResp.results.length > 0) {
             const file = searchResp.results[0].file;
             const dfgResp = queryDaemonSync(
               { cmd: "dfg", file, function: funcForDfg, language },
-              projectPath,
+              projectPath
             );
             if (dfgResp.status === "ok" && dfgResp.result) {
               const dfg = dfgResp.result;
@@ -588,7 +558,7 @@ Called by:`);
           const targetLine = lineNumber || 10;
           const searchResp = queryDaemonSync(
             { cmd: "search", pattern: `def ${entryPoint}` },
-            projectPath,
+            projectPath
           );
           if (searchResp.results && searchResp.results.length > 0) {
             const file = searchResp.results[0].file;
@@ -598,14 +568,14 @@ Called by:`);
                 file,
                 function: entryPoint,
                 line: targetLine,
-                direction: "backward",
+                direction: "backward"
               },
-              projectPath,
+              projectPath
             );
             if (sliceResp.status === "ok" && sliceResp.result) {
               const slice = sliceResp.result;
               const lines = [
-                `## PDG Slice: ${entryPoint} @ line ${targetLine}`,
+                `## PDG Slice: ${entryPoint} @ line ${targetLine}`
               ];
               if (slice.lines && Array.isArray(slice.lines)) {
                 lines.push(`Slice lines: ${slice.lines.length}`);
@@ -624,7 +594,7 @@ Called by:`);
         case "ast": {
           const structResp = queryDaemonSync(
             { cmd: "structure", language, max_results: 20 },
-            projectPath,
+            projectPath
           );
           if (structResp.status === "ok" && structResp.result) {
             const struct = structResp.result;
@@ -663,7 +633,7 @@ function findProjectRoot(startPath) {
     "pyproject.toml",
     "package.json",
     "Cargo.toml",
-    "go.mod",
+    "go.mod"
   ];
   while (current !== "/") {
     for (const marker of markers) {
@@ -687,11 +657,7 @@ async function main() {
   const prompt = input.tool_input.prompt || "";
   const description = input.tool_input.description || "";
   const fullText = `${prompt} ${description}`;
-  if (
-    prompt.includes("## Code Context:") ||
-    prompt.includes("## CFG:") ||
-    prompt.includes("## DFG:")
-  ) {
+  if (prompt.includes("## Code Context:") || prompt.includes("## CFG:") || prompt.includes("## DFG:")) {
     console.log("{}");
     return;
   }
@@ -714,7 +680,7 @@ async function main() {
       language,
       layers,
       lineNumber,
-      varName,
+      varName
     );
     if (tldrContext) {
       usedTarget = entryPoint;
@@ -728,7 +694,7 @@ async function main() {
       language,
       layers,
       lineNumber,
-      varName,
+      varName
     );
   }
   if (!tldrContext) {
@@ -749,13 +715,13 @@ ${prompt}`;
       permissionDecisionReason: `Injected ${layers.join("+")} context for: ${usedTarget}`,
       updatedInput: {
         ...input.tool_input,
-        prompt: enhancedPrompt,
-      },
-    },
+        prompt: enhancedPrompt
+      }
+    }
   };
   trackHookActivitySync("tldr-context-inject", projectRoot, true, {
     context_injected: 1,
-    layers_used: layers.length,
+    layers_used: layers.length
   });
   console.log(JSON.stringify(output));
 }

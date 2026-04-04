@@ -6,7 +6,7 @@ function parseTranscript(transcriptPath) {
     recentToolCalls: [],
     lastAssistantMessage: "",
     filesModified: [],
-    errorsEncountered: [],
+    errorsEncountered: []
   };
   if (!fs.existsSync(transcriptPath)) {
     return summary;
@@ -23,10 +23,7 @@ function parseTranscript(transcriptPath) {
       const entry = JSON.parse(line);
       if (entry.role === "assistant" && typeof entry.content === "string") {
         lastAssistant = entry.content;
-      } else if (
-        entry.type === "assistant" &&
-        typeof entry.content === "string"
-      ) {
+      } else if (entry.type === "assistant" && typeof entry.content === "string") {
         lastAssistant = entry.content;
       }
       if (entry.tool_name || entry.type === "tool_use") {
@@ -36,28 +33,20 @@ function parseTranscript(transcriptPath) {
             name: toolName,
             timestamp: entry.timestamp,
             input: entry.tool_input,
-            success: true,
+            success: true
             // Will be updated by result
           };
-          if (
-            toolName === "TodoWrite" ||
-            toolName.toLowerCase().includes("todowrite")
-          ) {
+          if (toolName === "TodoWrite" || toolName.toLowerCase().includes("todowrite")) {
             const input = entry.tool_input;
             if (input?.todos) {
               lastTodoState = input.todos.map((t, idx) => ({
                 id: t.id || `todo-${idx}`,
                 content: t.content || "",
-                status: t.status || "pending",
+                status: t.status || "pending"
               }));
             }
           }
-          if (
-            toolName === "Edit" ||
-            toolName === "Write" ||
-            toolName.toLowerCase().includes("edit") ||
-            toolName.toLowerCase().includes("write")
-          ) {
+          if (toolName === "Edit" || toolName === "Write" || toolName.toLowerCase().includes("edit") || toolName.toLowerCase().includes("write")) {
             const input = entry.tool_input;
             const filePath = input?.file_path || input?.path;
             if (filePath && typeof filePath === "string") {
@@ -106,22 +95,16 @@ function parseTranscript(transcriptPath) {
   return summary;
 }
 function generateAutoHandoff(summary, sessionName) {
-  const timestamp = /* @__PURE__ */ new Date().toISOString();
+  const timestamp = (/* @__PURE__ */ new Date()).toISOString();
   const dateOnly = timestamp.split("T")[0];
   const lines = [];
   const inProgress = summary.lastTodos.filter(
-    (t) => t.status === "in_progress",
+    (t) => t.status === "in_progress"
   );
   const pending = summary.lastTodos.filter((t) => t.status === "pending");
   const completed = summary.lastTodos.filter((t) => t.status === "completed");
-  const currentTask =
-    inProgress[0]?.content ||
-    pending[0]?.content ||
-    "Continue from auto-compact";
-  const goalSummary =
-    completed.length > 0
-      ? `Completed ${completed.length} task(s) before auto-compact`
-      : "Session auto-compacted";
+  const currentTask = inProgress[0]?.content || pending[0]?.content || "Continue from auto-compact";
+  const goalSummary = completed.length > 0 ? `Completed ${completed.length} task(s) before auto-compact` : "Session auto-compacted";
   lines.push("---");
   lines.push(`session: ${sessionName}`);
   lines.push(`date: ${dateOnly}`);
@@ -168,17 +151,17 @@ function generateAutoHandoff(summary, sessionName) {
   lines.push("");
   lines.push("findings:");
   lines.push(
-    `  - tool_calls: "${summary.recentToolCalls.length} recent tool calls"`,
+    `  - tool_calls: "${summary.recentToolCalls.length} recent tool calls"`
   );
   lines.push(
-    `  - files_modified: "${summary.filesModified.length} files changed"`,
+    `  - files_modified: "${summary.filesModified.length} files changed"`
   );
   lines.push("");
   lines.push("worked:");
   const successfulTools = summary.recentToolCalls.filter((t) => t.success);
   if (successfulTools.length > 0) {
     lines.push(
-      `  - "${successfulTools.map((t) => t.name).join(", ")} completed successfully"`,
+      `  - "${successfulTools.map((t) => t.name).join(", ")} completed successfully"`
     );
   } else {
     lines.push("  []");
@@ -188,7 +171,7 @@ function generateAutoHandoff(summary, sessionName) {
   const failedTools = summary.recentToolCalls.filter((t) => !t.success);
   if (failedTools.length > 0) {
     lines.push(
-      `  - "${failedTools.map((t) => t.name).join(", ")} encountered errors"`,
+      `  - "${failedTools.map((t) => t.name).join(", ")} encountered errors"`
     );
   } else {
     lines.push("  []");
@@ -224,7 +207,7 @@ if (isMainModule) {
   const args = process.argv.slice(2);
   if (args.length === 0) {
     console.log(
-      "Usage: npx tsx transcript-parser.ts <transcript-path> [session-name]",
+      "Usage: npx tsx transcript-parser.ts <transcript-path> [session-name]"
     );
     process.exit(1);
   }
@@ -237,4 +220,7 @@ if (isMainModule) {
   console.log("\n--- Auto-Handoff ---");
   console.log(generateAutoHandoff(summary, sessionName));
 }
-export { generateAutoHandoff, parseTranscript };
+export {
+  generateAutoHandoff,
+  parseTranscript
+};
