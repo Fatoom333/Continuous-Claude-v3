@@ -28,9 +28,9 @@ The Parallel Hook Executor reduces hook chain latency by executing independent h
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-## Files Created
+## Executors
 
-### 1. `parallel-executor.ts`
+### 1. `parallel-executor.ts` (Generic)
 
 Core parallel execution engine that:
 - Accepts list of hooks via command-line argument
@@ -58,7 +58,26 @@ Specialized executor for PostToolUse Edit|Write hooks:
 echo '{"tool_name":"Edit",...}' | node dist/post-tool-use-parallel.mjs
 ```
 
-### 3. `parallel-hooks.yaml`
+### 3. `pre-tool-use-parallel.ts`
+
+Specialized executor for PreToolUse hooks:
+- **Edit:** Runs file-claims, edit-context-inject, signature-helper in parallel (3 hooks)
+- **Task:** Runs tldr-context-inject, arch-context-inject in parallel (2 hooks)
+
+**Usage:**
+```bash
+# For Edit tool
+echo '{"tool_name":"Edit",...}' | node dist/pre-tool-use-parallel.mjs edit
+
+# For Task tool
+echo '{"tool_name":"Task",...}' | node dist/pre-tool-use-parallel.mjs task
+```
+
+**Performance:**
+- Edit: 15s sequential → ~6s parallel (60% faster)
+- Task: 60s sequential → ~32s parallel (47% faster)
+
+### 4. `parallel-hooks.yaml`
 
 Configuration file defining which hooks can run in parallel:
 - `post_tool_use_edit` - Edit|Write hooks
