@@ -1276,9 +1276,47 @@ The hook system has been significantly optimized for faster response times:
 | **Exponential Backoff** | resilient | MCP connections retry with jitter               |
 | **Circuit Breaker**     | resilient | Per-server breaker prevents cascade failures    |
 
+#### Parallel Hook Execution
+
+```mermaid
+flowchart LR
+    subgraph Sequential["Sequential (Before)"]
+        A[Hook 1] --> B[Hook 2] --> C[Hook 3] --> D[Hook 4] --> E[Hook 5]
+    end
+    
+    subgraph Parallel["Parallel (After)"]
+        F[Hook 1] & G[Hook 2] & H[Hook 3] & I[Hook 4] & J[Hook 5]
+    end
+    
+    Sequential -->|90-95s| Result[Result]
+    Parallel -->|45-55s| Result
+    
+    style Sequential fill:#ffcccc
+    style Parallel fill:#ccffcc
+```
+
+#### Circuit Breaker Pattern
+
+```mermaid
+stateDiagram-v2
+    [*] --> Closed
+    Closed --> Open: Failures > Threshold
+    Open --> HalfOpen: Timeout
+    HalfOpen --> Closed: Success
+    HalfOpen --> Open: Failure
+```
+
 ### Hook Test Coverage
 
 169 tests across critical hooks ensure reliability:
+
+```mermaid
+xychart-beta
+    title "Hook Test Coverage"
+    x-axis ["skill-activation", "tldr-read-enforcer", "compiler-in-loop", "session-start", "memory-awareness"]
+    y-axis "Tests" 0 --> 50
+    bar [23, 33, 31, 37, 45]
+```
 
 | Hook                       | Tests | Coverage                           |
 | -------------------------- | ----- | ---------------------------------- |
