@@ -238,7 +238,7 @@ Before starting, show what will run:
 Based on your answers, I'll run:
 
 **Mode:** brownfield
-**Chain:** onboard → research-codebase → plan-agent → implement_plan
+**Chain:** onboard → research-codebase → plan-agent → implement-plan
 **Options:** --skip-commit
 **Description:** "Add user authentication with OAuth"
 
@@ -251,10 +251,10 @@ This ensures the user knows exactly what will happen before any agents spawn.
 
 | Mode         | Chain                                                                                          | Use Case                              |
 | ------------ | ---------------------------------------------------------------------------------------------- | ------------------------------------- |
-| `greenfield` | discovery-interview -> plan-agent -> validate-agent -> implement_plan -> commit -> describe_pr | New feature from scratch              |
-| `brownfield` | onboard -> research-codebase -> plan-agent -> validate-agent -> implement_plan                 | Feature in existing codebase          |
-| `tdd`        | plan-agent -> test-driven-development -> implement_plan                                        | Test-first implementation             |
-| `refactor`   | tldr-code (impact) -> plan-agent -> test-driven-development -> implement_plan                  | Safe refactoring with impact analysis |
+| `greenfield` | discovery-interview -> plan-agent -> validate-agent -> implement-plan -> commit -> describe-pr | New feature from scratch              |
+| `brownfield` | onboard -> research-codebase -> plan-agent -> validate-agent -> implement-plan                 | Feature in existing codebase          |
+| `tdd`        | plan-agent -> test-driven-development -> implement-plan                                        | Test-first implementation             |
+| `refactor`   | tldr-code (impact) -> plan-agent -> test-driven-development -> implement-plan                  | Safe refactoring with impact analysis |
 
 ## Options
 
@@ -290,10 +290,10 @@ Build the skill chain based on mode:
 
 ```python
 CHAINS = {
-    "greenfield": ["discovery-interview", "plan-agent", "validate-agent", "implement_plan", "commit", "describe_pr"],
-    "brownfield": ["onboard", "research-codebase", "plan-agent", "validate-agent", "implement_plan"],
-    "tdd": ["plan-agent", "test-driven-development", "implement_plan"],
-    "refactor": ["tldr-impact", "plan-agent", "test-driven-development", "implement_plan"]
+    "greenfield": ["discovery-interview", "plan-agent", "validate-agent", "implement-plan", "commit", "describe-pr"],
+    "brownfield": ["onboard", "research-codebase", "plan-agent", "validate-agent", "implement-plan"],
+    "tdd": ["plan-agent", "test-driven-development", "implement-plan"],
+    "refactor": ["tldr-impact", "plan-agent", "test-driven-development", "implement-plan"]
 }
 ```
 
@@ -302,7 +302,7 @@ Apply options to modify chain:
 - `--skip-discovery`: Remove "discovery-interview" from chain
 - `--skip-validate`: Remove "validate-agent" from chain
 - `--skip-commit`: Remove "commit" from chain
-- `--skip-pr`: Remove "describe_pr" from chain
+- `--skip-pr`: Remove "describe-pr" from chain
 
 ### Step 1: Setup
 
@@ -353,7 +353,7 @@ For each skill in the chain:
 
 ```
 Task(
-  subagent_type="discovery-interview",
+  subagent_type="oracle",
   prompt="""
   [Contents of discovery-interview SKILL.md]
 
@@ -364,6 +364,7 @@ Task(
   Handoff directory: thoughts/shared/handoffs/<session>/
 
   Conduct the interview and create spec.
+  Use oracle for research when knowledge gaps are detected.
   """
 )
 ```
@@ -392,7 +393,7 @@ Output: TLDR caches, continuity ledger
 
 ```
 Task(
-  subagent_type="research-codebase",
+  subagent_type="scout",
   prompt="""
   [Contents of research-codebase SKILL.md]
 
@@ -503,20 +504,20 @@ I'll guide you through each cycle. Starting with first test..."
 
 This is interactive - guide user through TDD cycles.
 
-**implement_plan:**
+**implement-plan:**
 
 ```
 # Check plan size
 if task_count <= 3:
     # Direct implementation
-    Follow implement_plan skill directly
+    Follow implement-plan skill directly
 else:
     # Agent orchestration mode
     For each task:
         Task(
-          subagent_type="implement_task",
+          subagent_type="kraken",
           prompt="""
-          [Contents of implement_task SKILL.md]
+          [Contents of implement-task SKILL.md]
 
           ---
 
@@ -556,10 +557,10 @@ Follow commit skill:
 4. Generate reasoning file
 ```
 
-**describe_pr:**
+**describe-pr:**
 
 ```
-Follow describe_pr skill:
+Follow describe-pr skill:
 1. Create PR if not exists
 2. Generate description from changes
 3. Update PR with description
@@ -650,7 +651,7 @@ User: /build greenfield Add user authentication with OAuth
 Claude: Starting greenfield workflow for "Add user authentication with OAuth"
 
 Creating session: build-20260108-user-auth-oauth
-Chain: discovery-interview -> plan-agent -> validate-agent -> implement_plan -> commit -> describe_pr
+Chain: discovery-interview -> plan-agent -> validate-agent -> implement-plan -> commit -> describe-pr
 
 Phase 1/6: Discovery Interview
 [Spawns discovery-interview agent]
@@ -875,7 +876,7 @@ Set in `.claude/settings.json`:
       "default_mode": "brownfield",
       "always_validate": true,
       "auto_commit": false,
-      "checkpoint_phases": ["plan-agent", "implement_plan"]
+      "checkpoint_phases": ["plan-agent", "implement-plan"]
     }
   }
 }
@@ -895,11 +896,11 @@ Set in `.claude/settings.json`:
 - `/discovery-interview` - Deep interview for requirements
 - `/plan-agent` - Create implementation plans
 - `/validate-agent` - Validate tech choices
-- `/implement_plan` - Execute implementation plans
-- `/implement_task` - Single task implementation
+- `/implement-plan` - Execute implementation plans
+- `/implement-task` - Single task implementation
 - `/test-driven-development` - TDD workflow
 - `/commit` - Create commits
-- `/describe_pr` - Generate PR descriptions
+- `/describe-pr` - Generate PR descriptions
 - `/onboard` - Codebase analysis
 - `/research-codebase` - Research existing code
 - `/tldr-code` - Code analysis CLI

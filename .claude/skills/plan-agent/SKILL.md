@@ -275,7 +275,7 @@ plan_file: thoughts/shared/plans/PLAN-<description>.md
 ## For Next Steps
 
 - User should review plan at: `thoughts/shared/plans/PLAN-<description>.md`
-- After approval, run `/implement_plan` with the plan path
+- After approval, run `/implement-plan` with the plan path
 - Research validation will occur before implementation
 ```
 

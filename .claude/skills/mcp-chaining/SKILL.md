@@ -30,7 +30,7 @@ A pipeline that chains these tools:
 
 ## Key Files
 
-- `scripts/research_implement_pipeline.py` - Main pipeline implementation
+- `scripts/research-implement-pipeline.py` - Main pipeline implementation
 - `scripts/test_research_pipeline.py` - Test harness with isolated sandbox
 - `workspace/pipeline-test/sample_code.py` - Test sample code
 
@@ -38,7 +38,7 @@ A pipeline that chains these tools:
 
 ```bash
 # Dry-run pipeline (preview plan without changes)
-uv run python -m runtime.harness scripts/research_implement_pipeline.py \
+uv run python -m runtime.harness scripts/research-implement-pipeline.py \
     --topic "async error handling python" \
     --target-dir "./workspace/pipeline-test" \
     --dry-run --verbose
@@ -47,7 +47,7 @@ uv run python -m runtime.harness scripts/research_implement_pipeline.py \
 uv run python -m runtime.harness scripts/test_research_pipeline.py --test all
 
 # View the pipeline script
-cat scripts/research_implement_pipeline.py
+cat scripts/research-implement-pipeline.py
 ```
 
 ## Critical Fix: Environment Variables
@@ -166,7 +166,7 @@ except Exception as e:
 
 ## Creating Your Own Pipeline
 
-1. Copy the pattern from `scripts/research_implement_pipeline.py`
+1. Copy the pattern from `scripts/research-implement-pipeline.py`
 2. Define your steps as async functions
 3. Use `check_tool_available()` for graceful degradation
 4. Chain results through `PipelineContext`

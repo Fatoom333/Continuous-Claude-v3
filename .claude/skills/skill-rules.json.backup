@@ -92,7 +92,7 @@
                 ]
             }
         },
-                "implement_plan": {
+                "implement-plan": {
             "type": "domain",
             "enforcement": "suggest",
             "priority": "critical",

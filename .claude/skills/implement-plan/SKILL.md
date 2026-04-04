@@ -13,7 +13,7 @@ You are tasked with implementing an approved technical plan from `thoughts/share
 
 Activate when:
 
-- User says "/implement_plan" or similar
+- User says "/implement-plan" or similar
 - User provides a path to a plan file
 - After `plan-agent` or `validate-agent` has created a plan that needs implementation
 - User says "implement this plan" or "start implementing"
@@ -473,7 +473,7 @@ If auto-compact happens mid-orchestration:
 ### Example Orchestration Session
 
 ```
-User: /implement_plan thoughts/shared/plans/PLAN-add-auth.md
+User: /implement-plan thoughts/shared/plans/PLAN-add-auth.md
 
 Claude: I'll use agent orchestration for this plan (6 tasks).
 

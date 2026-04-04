@@ -291,7 +291,7 @@ version: 5.1-hybrid
 ## Example Usage
 
 ```
-User: "Upgrade .claude/skills/implement_plan/SKILL.md to v5 Hybrid"
+User: "Upgrade .claude/skills/implement-plan/SKILL.md to v5 Hybrid"
 
 Claude:
 1. Creates session directory

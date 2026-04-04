@@ -153,7 +153,7 @@ Handoffs persist on disk. If compaction happens, you re-read handoffs and contin
 
 2. **Read the implementation agent skill:**
    ```bash
-   cat .claude/skills/implement_task/SKILL.md
+   cat .claude/skills/implement-task/SKILL.md
    ```
    This defines how agents should behave.
 
@@ -189,7 +189,7 @@ For each task in the plan:
      subagent_type="general-purpose",
      model="opus",
      prompt="""
-     [Paste contents of .claude/skills/implement_task/SKILL.md here]
+     [Paste contents of .claude/skills/implement-task/SKILL.md here]
 
      ---
 
@@ -246,7 +246,7 @@ If auto-compact happens mid-orchestration:
 ### Example Orchestration Session
 
 ```
-User: /implement_plan thoughts/shared/plans/PLAN-add-auth.md
+User: /implement-plan thoughts/shared/plans/PLAN-add-auth.md
 
 Claude: I'll use agent orchestration for this plan (6 tasks).
 
