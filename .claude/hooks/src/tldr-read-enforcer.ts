@@ -194,7 +194,7 @@ function getTldrContext(
   sessionId: string | null = null,
   contextSource: string = "default",
 ): string | null {
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
   const fileName = basename(filePath);
   const results: string[] = [];
 
@@ -572,7 +572,7 @@ ${callerLines.join("\n")}${searchContext.callers.length > 10 ? `\n  ... and ${se
   }
 
   // Track hook activity (P8)
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
   trackHookActivitySync("tldr-read-enforcer", projectDir, true, {
     reads_intercepted: 1,
     layers_returned: layers.length,

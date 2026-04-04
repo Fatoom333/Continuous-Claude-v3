@@ -342,7 +342,7 @@ async function main() {
       process.exit(0);
     }
     const prompt = data.prompt.toLowerCase();
-    const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+    const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
     const homeDir = process.env.HOME || process.env.USERPROFILE || "";
     const projectRulesPath = join2(
       projectDir,

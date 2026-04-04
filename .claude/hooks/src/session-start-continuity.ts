@@ -54,7 +54,7 @@ export function findSessionHandoffWithUUID(
   sessionName: string,
   sessionId: string,
 ): string | null {
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
   const handoffsBase = path.join(projectDir, "thoughts", "shared", "handoffs");
 
   if (!fs.existsSync(handoffsBase)) return null;
@@ -169,7 +169,7 @@ export function extractLedgerSection(handoffContent: string): string | null {
  * Returns absolute path to the most recent handoff file (.md, .yaml, .yml) by mtime, or null if not found.
  */
 export function findSessionHandoff(sessionName: string): string | null {
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
   const handoffDir = path.join(
     projectDir,
     "thoughts",
@@ -340,7 +340,7 @@ interface UnmarkedHandoff {
 
 function getUnmarkedHandoffs(): UnmarkedHandoff[] {
   try {
-    const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+    const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
     const dbPath = path.join(
       projectDir,
       ".claude",
@@ -429,7 +429,7 @@ function ensureMemoryDaemon(): string | null {
 
 async function main() {
   const input: SessionStartInput = JSON.parse(await readStdin());
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
 
   ensureMemoryDaemon();
 

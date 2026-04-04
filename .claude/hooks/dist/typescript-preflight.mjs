@@ -37,7 +37,7 @@ async function main() {
       console.log(JSON.stringify({}));
       return;
     }
-    const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+    const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
     const homeDir = process.env.HOME || process.env.USERPROFILE || "";
     let scriptPath = path.join(projectDir, "scripts", "typescript_check.py");
     if (!fs.existsSync(scriptPath)) {

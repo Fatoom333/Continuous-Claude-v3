@@ -185,7 +185,7 @@ async function main() {
   }
 
   // Get project path
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || input.cwd;
+  const projectDir = process.env.CLAUDE_CC_DIR || input.cwd;
 
   if (!projectDir || !existsSync(projectDir)) {
     console.log("{}");

@@ -31,17 +31,17 @@ describe("findSessionHandoff", () => {
       path.join(os.tmpdir(), "findSessionHandoff-test-"),
     );
 
-    // Save and override CLAUDE_PROJECT_DIR
-    originalProjectDir = process.env.CLAUDE_PROJECT_DIR;
-    process.env.CLAUDE_PROJECT_DIR = testDir;
+    // Save and override CLAUDE_CC_DIR
+    originalProjectDir = process.env.CLAUDE_CC_DIR;
+    process.env.CLAUDE_CC_DIR = testDir;
   });
 
   afterEach(() => {
-    // Restore original CLAUDE_PROJECT_DIR
+    // Restore original CLAUDE_CC_DIR
     if (originalProjectDir !== undefined) {
-      process.env.CLAUDE_PROJECT_DIR = originalProjectDir;
+      process.env.CLAUDE_CC_DIR = originalProjectDir;
     } else {
-      delete process.env.CLAUDE_PROJECT_DIR;
+      delete process.env.CLAUDE_CC_DIR;
     }
 
     // Clean up temp directory
@@ -267,7 +267,7 @@ describe("findSessionHandoff", () => {
     assert.strictEqual(result, handoffFile, "Should return the correct file");
   });
 
-  it("should use CLAUDE_PROJECT_DIR environment variable", () => {
+  it("should use CLAUDE_CC_DIR environment variable", () => {
     // This test verifies the function uses the env var we set up
     const sessionName = "env-var-test";
     const handoffDir = path.join(
@@ -284,10 +284,10 @@ describe("findSessionHandoff", () => {
 
     const result = findSessionHandoff(sessionName);
 
-    assert.notStrictEqual(result, null, "Should use CLAUDE_PROJECT_DIR");
+    assert.notStrictEqual(result, null, "Should use CLAUDE_CC_DIR");
     assert.ok(
       result!.startsWith(testDir),
-      "Result should be within CLAUDE_PROJECT_DIR",
+      "Result should be within CLAUDE_CC_DIR",
     );
   });
 });
@@ -372,15 +372,15 @@ describe("findSessionHandoffWithUUID", () => {
 
   beforeEach(() => {
     testDir = fs.mkdtempSync(path.join(os.tmpdir(), "uuid-handoff-test-"));
-    originalProjectDir = process.env.CLAUDE_PROJECT_DIR;
-    process.env.CLAUDE_PROJECT_DIR = testDir;
+    originalProjectDir = process.env.CLAUDE_CC_DIR;
+    process.env.CLAUDE_CC_DIR = testDir;
   });
 
   afterEach(() => {
     if (originalProjectDir !== undefined) {
-      process.env.CLAUDE_PROJECT_DIR = originalProjectDir;
+      process.env.CLAUDE_CC_DIR = originalProjectDir;
     } else {
-      delete process.env.CLAUDE_PROJECT_DIR;
+      delete process.env.CLAUDE_CC_DIR;
     }
     fs.rmSync(testDir, { recursive: true, force: true });
   });

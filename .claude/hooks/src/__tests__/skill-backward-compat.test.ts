@@ -17,7 +17,7 @@ describe("Backward Compatibility", () => {
   let skillRules: SkillRulesConfig;
 
   beforeEach(() => {
-    const projectDir = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
+    const projectDir = process.env.CLAUDE_CC_DIR ?? process.cwd();
     const rulesPath = join(projectDir, ".claude", "skills", "skill-rules.json");
     try {
       const content = readFileSync(rulesPath, "utf-8");

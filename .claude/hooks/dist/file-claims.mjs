@@ -12,7 +12,7 @@ function getOpcDir() {
   if (envOpcDir && existsSync(envOpcDir)) {
     return envOpcDir;
   }
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
   const localOpc = join(projectDir, "opc");
   if (existsSync(localOpc)) {
     return localOpc;
@@ -212,7 +212,7 @@ function getSessionId(options = {}) {
   return generateSessionId();
 }
 function getProject() {
-  return process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  return process.env.CLAUDE_CC_DIR || process.cwd();
 }
 
 // src/file-claims.ts

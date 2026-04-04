@@ -180,26 +180,26 @@ describe("getProject", () => {
   let originalProjectDir: string | undefined;
 
   beforeEach(() => {
-    originalProjectDir = process.env.CLAUDE_PROJECT_DIR;
+    originalProjectDir = process.env.CLAUDE_CC_DIR;
   });
 
   afterEach(() => {
     if (originalProjectDir) {
-      process.env.CLAUDE_PROJECT_DIR = originalProjectDir;
+      process.env.CLAUDE_CC_DIR = originalProjectDir;
     } else {
-      delete process.env.CLAUDE_PROJECT_DIR;
+      delete process.env.CLAUDE_CC_DIR;
     }
   });
 
-  it("returns CLAUDE_PROJECT_DIR when set", () => {
-    process.env.CLAUDE_PROJECT_DIR = "/test/project";
+  it("returns CLAUDE_CC_DIR when set", () => {
+    process.env.CLAUDE_CC_DIR = "/test/project";
 
     const result = getProject();
     expect(result).toBe("/test/project");
   });
 
-  it("falls back to cwd when CLAUDE_PROJECT_DIR not set", () => {
-    delete process.env.CLAUDE_PROJECT_DIR;
+  it("falls back to cwd when CLAUDE_CC_DIR not set", () => {
+    delete process.env.CLAUDE_CC_DIR;
 
     const result = getProject();
     expect(result).toBe(process.cwd());

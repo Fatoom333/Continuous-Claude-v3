@@ -18,7 +18,7 @@ import type {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const PROJECT_DIR =
-  process.env.CLAUDE_PROJECT_DIR || resolve(__dirname, "..", "..", "..", "..");
+  process.env.CLAUDE_CC_DIR || resolve(__dirname, "..", "..", "..", "..");
 
 /**
  * Call Python validate_composition.py with JSON output.

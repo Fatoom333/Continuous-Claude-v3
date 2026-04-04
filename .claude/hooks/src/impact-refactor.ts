@@ -223,7 +223,7 @@ async function main() {
     return;
   }
 
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || input.cwd;
+  const projectDir = process.env.CLAUDE_CC_DIR || input.cwd;
 
   const results: string[] = [];
 

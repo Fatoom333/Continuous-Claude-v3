@@ -29,17 +29,17 @@ describe("main() handoff-first behavior", () => {
     // Create a temp directory for each test
     testDir = fs.mkdtempSync(path.join(os.tmpdir(), "mainHandoffFirst-test-"));
 
-    // Save and override CLAUDE_PROJECT_DIR
-    originalProjectDir = process.env.CLAUDE_PROJECT_DIR;
-    process.env.CLAUDE_PROJECT_DIR = testDir;
+    // Save and override CLAUDE_CC_DIR
+    originalProjectDir = process.env.CLAUDE_CC_DIR;
+    process.env.CLAUDE_CC_DIR = testDir;
   });
 
   afterEach(() => {
-    // Restore original CLAUDE_PROJECT_DIR
+    // Restore original CLAUDE_CC_DIR
     if (originalProjectDir !== undefined) {
-      process.env.CLAUDE_PROJECT_DIR = originalProjectDir;
+      process.env.CLAUDE_CC_DIR = originalProjectDir;
     } else {
-      delete process.env.CLAUDE_PROJECT_DIR;
+      delete process.env.CLAUDE_CC_DIR;
     }
 
     // Clean up temp directory
@@ -58,11 +58,11 @@ describe("main() handoff-first behavior", () => {
 
     try {
       const stdout = execSync(
-        `echo '${inputJson}' | CLAUDE_PROJECT_DIR="${testDir}" node "${hookPath}"`,
+        `echo '${inputJson}' | CLAUDE_CC_DIR="${testDir}" node "${hookPath}"`,
         {
           encoding: "utf-8",
           timeout: 5000,
-          env: { ...process.env, CLAUDE_PROJECT_DIR: testDir },
+          env: { ...process.env, CLAUDE_CC_DIR: testDir },
         },
       );
       return { stdout, stderr: "" };

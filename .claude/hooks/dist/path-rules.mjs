@@ -61,7 +61,7 @@ function readStdin() {
   return readFileSync(0, "utf-8");
 }
 function getProjectDir() {
-  return process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  return process.env.CLAUDE_CC_DIR || process.cwd();
 }
 function loadSkillContent(skillName) {
   const projectDir = getProjectDir();

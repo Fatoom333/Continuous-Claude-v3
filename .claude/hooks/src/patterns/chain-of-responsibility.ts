@@ -14,7 +14,7 @@
  * - CHAIN_LENGTH: Total number of handlers in chain
  * - COR_ESCALATE: Set to "true" to escalate to next handler
  * - AGENT_ROLE: Always "handler"
- * - CLAUDE_PROJECT_DIR: Project directory for DB path
+ * - CLAUDE_CC_DIR: Project directory for DB path
  */
 
 import { existsSync } from "fs";

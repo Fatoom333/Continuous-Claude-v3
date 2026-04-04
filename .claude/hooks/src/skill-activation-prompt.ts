@@ -244,7 +244,7 @@ async function main() {
     const prompt = data.prompt.toLowerCase();
 
     // Load skill rules (try project first, then global)
-    const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+    const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
     const homeDir = process.env.HOME || process.env.USERPROFILE || "";
     const projectRulesPath = join(
       projectDir,

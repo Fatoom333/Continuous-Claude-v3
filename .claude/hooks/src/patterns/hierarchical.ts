@@ -14,7 +14,7 @@
  * - COORDINATOR_ID: ID of coordinator (for specialists)
  * - AGENT_ID: ID of the current agent
  * - HIERARCHY_LEVEL: Level in hierarchy (0 = coordinator, 1+ = specialist)
- * - CLAUDE_PROJECT_DIR: Project directory for DB path
+ * - CLAUDE_CC_DIR: Project directory for DB path
  */
 
 import { existsSync } from "fs";

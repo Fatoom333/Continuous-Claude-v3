@@ -61,6 +61,20 @@ function releaseLock(projectDir) {
   }
 }
 var QUERY_TIMEOUT = 3e3;
+var daemonStatusCache = /* @__PURE__ */ new Map();
+var CACHE_TTL_MS = 6e4;
+function getCachedDaemonStatus(projectDir) {
+  const cached = daemonStatusCache.get(resolveProjectDir(projectDir));
+  if (!cached) return null;
+  if (Date.now() - cached.timestamp >= CACHE_TTL_MS) return null;
+  return cached.running;
+}
+function cacheDaemonStatus(projectDir, running) {
+  daemonStatusCache.set(resolveProjectDir(projectDir), {
+    running,
+    timestamp: Date.now()
+  });
+}
 function getConnectionInfo(projectDir) {
   const resolvedPath = resolveProjectDir(projectDir);
   const hash = crypto.createHash("md5").update(resolvedPath).digest("hex").substring(0, 8);
@@ -142,23 +156,32 @@ function isDaemonReachable(projectDir) {
 }
 function tryStartDaemon(projectDir) {
   try {
+    const cachedStatus = getCachedDaemonStatus(projectDir);
+    if (cachedStatus === true) {
+      return true;
+    }
     if (isDaemonProcessRunning(projectDir)) {
+      cacheDaemonStatus(projectDir, true);
       return true;
     }
     if (isDaemonReachable(projectDir)) {
+      cacheDaemonStatus(projectDir, true);
       return true;
     }
     if (!tryAcquireLock(projectDir)) {
       const start = Date.now();
       while (Date.now() - start < 5e3) {
         if (isDaemonProcessRunning(projectDir) || isDaemonReachable(projectDir)) {
+          cacheDaemonStatus(projectDir, true);
           return true;
         }
         const end = Date.now() + 100;
         while (Date.now() < end) {
         }
       }
-      return isDaemonProcessRunning(projectDir) || isDaemonReachable(projectDir);
+      const running = isDaemonProcessRunning(projectDir) || isDaemonReachable(projectDir);
+      if (running) cacheDaemonStatus(projectDir, true);
+      return running;
     }
     try {
       const tldrPath = join(projectDir, "opc", "packages", "tldr-code");
@@ -187,13 +210,16 @@ function tryStartDaemon(projectDir) {
           const cooldown = Date.now() + 1e3;
           while (Date.now() < cooldown) {
           }
+          cacheDaemonStatus(projectDir, true);
           return true;
         }
         const end = Date.now() + 100;
         while (Date.now() < end) {
         }
       }
-      return isDaemonReachable(projectDir);
+      const reachable = isDaemonReachable(projectDir);
+      if (reachable) cacheDaemonStatus(projectDir, true);
+      return reachable;
     } finally {
       releaseLock(projectDir);
     }
@@ -296,7 +322,7 @@ function extractPythonImports(code) {
   return imports;
 }
 function checkSymbolExists(symbol) {
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || ".";
+  const projectDir = process.env.CLAUDE_CC_DIR || ".";
   const funcResults = tldrSearch(`def ${symbol}`, projectDir);
   if (funcResults.length > 0) {
     return {
@@ -356,7 +382,7 @@ async function main() {
 ${warnings.join("\n")}`
     }
   };
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || ".";
+  const projectDir = process.env.CLAUDE_CC_DIR || ".";
   trackHookActivitySync("import-validator", projectDir, true, {
     writes_validated: 1,
     warnings_found: warnings.length

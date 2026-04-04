@@ -117,6 +117,50 @@ function releaseLock(projectDir: string): void {
 const QUERY_TIMEOUT = 3000;
 
 /**
+ * In-memory cache for daemon status.
+ * Avoids repeated PID/spawnSync checks within a session.
+ */
+let daemonStatusCache: Map<string, { running: boolean; timestamp: number }> = new Map();
+const CACHE_TTL_MS = 60_000; // 1 minute TTL
+
+/**
+ * Check if daemon status is cached and still valid.
+ */
+function isDaemonStatusCached(projectDir: string): boolean {
+  const cached = daemonStatusCache.get(resolveProjectDir(projectDir));
+  if (!cached) return false;
+  // Cache is valid for 1 minute
+  return Date.now() - cached.timestamp < CACHE_TTL_MS;
+}
+
+/**
+ * Get cached daemon status.
+ */
+function getCachedDaemonStatus(projectDir: string): boolean | null {
+  const cached = daemonStatusCache.get(resolveProjectDir(projectDir));
+  if (!cached) return null;
+  if (Date.now() - cached.timestamp >= CACHE_TTL_MS) return null;
+  return cached.running;
+}
+
+/**
+ * Cache daemon status.
+ */
+function cacheDaemonStatus(projectDir: string, running: boolean): void {
+  daemonStatusCache.set(resolveProjectDir(projectDir), {
+    running,
+    timestamp: Date.now(),
+  });
+}
+
+/**
+ * Clear daemon status cache (used when daemon might have stopped).
+ */
+export function clearDaemonCache(projectDir: string): void {
+  daemonStatusCache.delete(resolveProjectDir(projectDir));
+}
+
+/**
  * Query structure for daemon commands.
  */
 export interface DaemonQuery {
@@ -398,15 +442,23 @@ function isDaemonReachable(projectDir: string): boolean {
  */
 export function tryStartDaemon(projectDir: string): boolean {
   try {
+    // CACHE CHECK: Fast path - if we confirmed daemon running recently, trust it
+    const cachedStatus = getCachedDaemonStatus(projectDir);
+    if (cachedStatus === true) {
+      return true; // Daemon was confirmed running within TTL
+    }
+
     // FAST CHECK: Is daemon process running? (checks PID file + kill -0)
     // This is faster and more reliable than socket ping
     if (isDaemonProcessRunning(projectDir)) {
+      cacheDaemonStatus(projectDir, true);
       return true; // Process exists, even if socket not ready yet
     }
 
     // SLOW CHECK: Is daemon reachable via socket?
     // Only needed if PID file doesn't exist (first start or cleaned up)
     if (isDaemonReachable(projectDir)) {
+      cacheDaemonStatus(projectDir, true);
       return true; // Already running, no need to spawn
     }
 
@@ -420,6 +472,7 @@ export function tryStartDaemon(projectDir: string): boolean {
           isDaemonProcessRunning(projectDir) ||
           isDaemonReachable(projectDir)
         ) {
+          cacheDaemonStatus(projectDir, true);
           return true;
         }
         // Brief wait
@@ -428,9 +481,9 @@ export function tryStartDaemon(projectDir: string): boolean {
           /* spin */
         }
       }
-      return (
-        isDaemonProcessRunning(projectDir) || isDaemonReachable(projectDir)
-      );
+      const running = isDaemonProcessRunning(projectDir) || isDaemonReachable(projectDir);
+      if (running) cacheDaemonStatus(projectDir, true);
+      return running;
     }
 
     try {
@@ -470,6 +523,7 @@ export function tryStartDaemon(projectDir: string): boolean {
           while (Date.now() < cooldown) {
             /* spin */
           }
+          cacheDaemonStatus(projectDir, true);
           return true;
         }
         // Brief wait
@@ -479,7 +533,9 @@ export function tryStartDaemon(projectDir: string): boolean {
         }
       }
 
-      return isDaemonReachable(projectDir);
+      const reachable = isDaemonReachable(projectDir);
+      if (reachable) cacheDaemonStatus(projectDir, true);
+      return reachable;
     } finally {
       // Always release lock
       releaseLock(projectDir);
