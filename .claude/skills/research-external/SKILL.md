@@ -9,7 +9,7 @@ allowed-tools: [Bash, Read, Write, Task]
 
 Research external sources (documentation, web, APIs) for libraries, best practices, and general topics.
 
-> **Note:** The current year is 2025. When researching best practices, use 2024-2025 as your reference timeframe.
+> **Note:** Default to modern (latest 1–2 years) best practices, tooling, and architecture. Verify that choices are not deprecated. Prefer actively maintained ecosystems, high performance, and production-grade patterns. If uncertain, choose the most current widely adopted solution.
 
 ## When to Use
 
@@ -203,11 +203,11 @@ Primary tool: **perplexity-search** - Find recommended approaches, patterns, ant
 ```bash
 # AI-synthesized research (sonar-pro)
 (cd $CLAUDE_OPC_DIR && uv run python scripts/mcp/perplexity_search.py \
-  --research "$TOPIC best practices 2024 2025")
+  --research "$TOPIC best practices latest")
 
 # If comparing alternatives
 (cd $CLAUDE_OPC_DIR && uv run python scripts/mcp/perplexity_search.py \
-  --reason "$TOPIC vs alternatives - which to choose?")
+  --reason "$TOPIC vs alternatives which to choose modern approach")
 ```
 
 **Thorough depth additions:**
@@ -215,11 +215,11 @@ Primary tool: **perplexity-search** - Find recommended approaches, patterns, ant
 ```bash
 # Chain-of-thought for complex decisions
 (cd $CLAUDE_OPC_DIR && uv run python scripts/mcp/perplexity_search.py \
-  --reason "$TOPIC tradeoffs and considerations 2025")
+  --reason "$TOPIC tradeoffs and modern considerations")
 
 # Deep comprehensive research
 (cd $CLAUDE_OPC_DIR && uv run python scripts/mcp/perplexity_search.py \
-  --deep "$TOPIC comprehensive guide 2025")
+  --deep "$TOPIC comprehensive guide latest")
 
 # Recent developments
 (cd $CLAUDE_OPC_DIR && uv run python scripts/mcp/perplexity_search.py \
@@ -299,7 +299,7 @@ status: complete
 
 {From nia-docs - API references, usage patterns}
 
-### Best Practices (2024-2025)
+### Best Practices (Recent, last 1–2 years)
 
 {From perplexity - recommended approaches}
 
@@ -476,5 +476,5 @@ If an MCP tool fails (API key missing, rate limited, etc.):
 
 - **NOT for codebase exploration** - Use `research-codebase` or `scout` for that
 - **Always cite sources** - Include URLs for all findings
-- **2024-2025 timeframe** - Focus on current best practices
+- **Recent timeframe (last 1–2 years)** — Prioritize modern, actively maintained solutions and avoid outdated or deprecated practices
 - **Graceful degradation** - Partial results better than no results

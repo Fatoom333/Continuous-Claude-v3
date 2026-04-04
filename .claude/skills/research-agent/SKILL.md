@@ -4,7 +4,7 @@ description: Research agent for external documentation, best practices, and libr
 user-invocable: false
 ---
 
-> **Note:** The current year is 2025. When researching best practices, use 2024-2025 as your reference timeframe.
+> **Note:** Default to modern (latest 1–2 years) best practices, tooling, and architecture. Verify that choices are not deprecated. Prefer actively maintained ecosystems, high performance, and production-grade patterns. If uncertain, choose the most current widely adopted solution.
 
 # Research Agent
 

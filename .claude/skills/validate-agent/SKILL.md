@@ -3,7 +3,7 @@ name: validate-agent
 description: Validation agent that validates plan tech choices against current best practices
 ---
 
-> **Note:** The current year is 2025. When validating tech choices, check against 2024-2025 best practices.
+> **Note:** Default to modern (latest 1–2 years) best practices, tooling, and architecture. Verify that choices are not deprecated. Prefer actively maintained ecosystems, high performance, and production-grade patterns. If uncertain, choose the most current widely adopted solution.
 
 # Validate Agent
 
