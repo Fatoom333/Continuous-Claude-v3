@@ -16,7 +16,7 @@ async function main() {
   try {
     // Call Python resource check
     const { execSync } = await import("child_process");
-    const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+    const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
     const result = execSync(
       `cd "${projectDir}" && uv run python -c "
 from scripts.agentica_patterns.dynamic_resources import DynamicAllocator, ResourceCircuitBreaker

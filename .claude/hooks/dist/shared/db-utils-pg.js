@@ -40,7 +40,7 @@ export function getPgConnectionString() {
  * @returns QueryResult with success, stdout, and stderr
  */
 export function runPgQuery(pythonCode, args = []) {
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
   const opcDir = join(projectDir, "opc");
   // Wrap the Python code to use asyncio.run() for async queries
   const wrappedCode = `

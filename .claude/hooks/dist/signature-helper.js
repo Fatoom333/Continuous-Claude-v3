@@ -130,7 +130,7 @@ function getSignatureFromTLDR(funcName, filePath) {
   return null;
 }
 function getProjectDir() {
-  return process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  return process.env.CLAUDE_CC_DIR || process.cwd();
 }
 async function main() {
   const input = JSON.parse(readFileSync(0, "utf-8"));

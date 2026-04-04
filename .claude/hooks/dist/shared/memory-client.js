@@ -35,7 +35,7 @@ export class MemoryClient {
     this.agentId = options.agentId || null;
     this.timeoutMs = options.timeoutMs || 5000;
     this.projectDir =
-      options.projectDir || process.env.CLAUDE_PROJECT_DIR || process.cwd();
+      options.projectDir || process.env.CLAUDE_CC_DIR || process.cwd();
   }
   /**
    * Search for similar content in memory.
@@ -142,7 +142,7 @@ import asyncio
 import os
 
 # Add project to path for imports
-project_dir = os.environ.get('CLAUDE_PROJECT_DIR', os.getcwd())
+project_dir = os.environ.get('CLAUDE_CC_DIR', os.getcwd())
 sys.path.insert(0, project_dir)
 
 async def search():
@@ -192,7 +192,7 @@ import asyncio
 import os
 
 # Add project to path for imports
-project_dir = os.environ.get('CLAUDE_PROJECT_DIR', os.getcwd())
+project_dir = os.environ.get('CLAUDE_CC_DIR', os.getcwd())
 sys.path.insert(0, project_dir)
 
 async def store():
@@ -231,7 +231,7 @@ asyncio.run(store())
         cwd: this.projectDir,
         env: {
           ...process.env,
-          CLAUDE_PROJECT_DIR: this.projectDir,
+          CLAUDE_CC_DIR: this.projectDir,
         },
       });
       return {

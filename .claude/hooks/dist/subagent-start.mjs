@@ -22,7 +22,7 @@ function getPgConnectionString() {
   );
 }
 function runPgQuery(pythonCode, args = []) {
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
   const opcDir = join(projectDir, "opc");
   const wrappedCode = `
 import sys
@@ -108,7 +108,7 @@ asyncio.run(main())
 import { spawnSync as spawnSync2 } from "child_process";
 import { join as join2 } from "path";
 function getDbPath() {
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
   return join2(
     projectDir,
     ".claude",

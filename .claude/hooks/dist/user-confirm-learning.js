@@ -19,11 +19,11 @@ import {
   extractConfirmationLearning,
 } from "./shared/learning-extractor.js";
 /**
- * Get state file path - project-local if CLAUDE_PROJECT_DIR set, else global
+ * Get state file path - project-local if CLAUDE_CC_DIR set, else global
  * Must match auto-learning.ts to share state
  */
 function getStateFilePath() {
-  const projectDir = process.env.CLAUDE_PROJECT_DIR;
+  const projectDir = process.env.CLAUDE_CC_DIR;
   if (projectDir) {
     return join(projectDir, ".claude", "cache", "auto-learning-state.json");
   }
@@ -106,7 +106,7 @@ function buildRecentContext(state) {
 }
 async function main() {
   const input = JSON.parse(readStdin());
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || input.cwd;
+  const projectDir = process.env.CLAUDE_CC_DIR || input.cwd;
   // Skip empty prompts
   if (!input.prompt || input.prompt.trim().length === 0) {
     console.log("{}");

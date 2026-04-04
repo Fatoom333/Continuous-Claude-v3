@@ -42,7 +42,7 @@ if global_env.exists():
 load_dotenv()
 
 # Add project root to path for imports (opc/)
-project_dir = os.environ.get("CLAUDE_PROJECT_DIR", str(Path(__file__).parent.parent.parent))
+project_dir = os.environ.get("CLAUDE_CC_DIR", str(Path(__file__).parent.parent.parent))
 sys.path.insert(0, project_dir)
 
 

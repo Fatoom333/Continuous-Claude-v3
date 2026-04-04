@@ -485,8 +485,8 @@ def main() -> None:
     cwd_str = workspace.get("current_dir", "")
 
     if not cwd_str:
-        # Fallback 1: CLAUDE_PROJECT_DIR env var (most reliable)
-        cwd_str = os.environ.get("CLAUDE_PROJECT_DIR", "")
+        # Fallback 1: CLAUDE_CC_DIR env var (most reliable)
+        cwd_str = os.environ.get("CLAUDE_CC_DIR", "")
 
     if not cwd_str:
         # Fallback 2: Walk up from cwd to find .git

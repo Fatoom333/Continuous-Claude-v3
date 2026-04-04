@@ -144,7 +144,7 @@ async function main() {
     console.log("");
     return;
   }
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || input.cwd;
+  const projectDir = process.env.CLAUDE_CC_DIR || input.cwd;
   const cacheDir = join(projectDir, ".claude", "cache", "tldr");
   const results = [];
   for (const funcName of functions.slice(0, 3)) {

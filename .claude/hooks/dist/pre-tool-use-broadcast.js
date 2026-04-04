@@ -28,7 +28,7 @@ async function main() {
     return;
   }
   // Query broadcasts table for this swarm
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
   const dbPath = join(
     projectDir,
     ".claude",

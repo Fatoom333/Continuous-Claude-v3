@@ -58,7 +58,7 @@ async function main() {
   if (!["startup", "resume", "clear"].includes(input.source)) {
     return;
   }
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || input.cwd;
+  const projectDir = process.env.CLAUDE_CC_DIR || input.cwd;
   const opcDir = join(projectDir, "opc");
   // Extract query from current context
   const query = extractQueryFromContext(projectDir);

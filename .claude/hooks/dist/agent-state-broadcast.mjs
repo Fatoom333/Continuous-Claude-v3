@@ -20,7 +20,7 @@ function extractTodos(input) {
   return null;
 }
 function broadcastState(agentId, toolName, todos) {
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
   const scriptPath = join(
     projectDir,
     "scripts",

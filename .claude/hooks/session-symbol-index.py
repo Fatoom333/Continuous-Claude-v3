@@ -16,7 +16,7 @@ import subprocess
 from pathlib import Path
 
 def main():
-    project_dir = Path(os.environ.get('CLAUDE_PROJECT_DIR', os.getcwd()))
+    project_dir = Path(os.environ.get('CLAUDE_CC_DIR', os.getcwd()))
     cache_dir = project_dir / '.claude' / 'cache' / 'tldr'
     semantic_dir = cache_dir / 'semantic'
 

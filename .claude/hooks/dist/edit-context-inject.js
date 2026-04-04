@@ -12,7 +12,7 @@ import { queryDaemonSync } from "./daemon-client.js";
  */
 function getTLDRExtract(filePath) {
   try {
-    const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+    const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
     const response = queryDaemonSync(
       { cmd: "extract", file: filePath },
       projectDir,

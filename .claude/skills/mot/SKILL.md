@@ -137,7 +137,7 @@ FAIL=0
 # Extract hook commands from settings.json and verify files exist
 grep -oE '"command":\s*"[^"]*\.sh"' .claude/settings.json 2>/dev/null | \
   sed 's/.*"\([^"]*\.sh\)".*/\1/' | \
-  sed 's|\$CLAUDE_PROJECT_DIR|.claude|g' | \
+  sed 's|\$CLAUDE_CC_DIR|.claude|g' | \
   sed "s|\$HOME|$HOME|g" | \
   sort -u | while read hook; do
     # Resolve to actual path

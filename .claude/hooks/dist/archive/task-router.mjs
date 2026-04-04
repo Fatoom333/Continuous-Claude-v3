@@ -100,13 +100,13 @@ except Exception as e:
 `;
   try {
     const result = spawnSync("uv", ["run", "python", "-c", pythonCode], {
-      cwd: process.env.CLAUDE_PROJECT_DIR || process.cwd(),
+      cwd: process.env.CLAUDE_CC_DIR || process.cwd(),
       encoding: "utf-8",
       timeout: 3e4,
       // 30 second timeout
       env: {
         ...process.env,
-        PYTHONPATH: process.env.CLAUDE_PROJECT_DIR || process.cwd()
+        PYTHONPATH: process.env.CLAUDE_CC_DIR || process.cwd()
       }
     });
     if (result.error) {
@@ -130,7 +130,7 @@ except Exception as e:
 }
 function callAgentRouter(prompt) {
   const escapedPrompt = prompt.replace(/'/g, "'\\''");
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
   const opcDir = `${projectDir}/opc`;
   try {
     const result = spawnSync("uv", ["run", "python", "-m", "scripts.agentica_patterns.agent_router", escapedPrompt], {

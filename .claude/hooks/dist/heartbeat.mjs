@@ -8,7 +8,7 @@ function getPgConnectionString() {
   );
 }
 function runPgQuery(pythonCode, args = []) {
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
   const opcDir = join(projectDir, "opc");
   const wrappedCode = `
 import sys
@@ -59,7 +59,7 @@ function getSessionId() {
   );
 }
 function getProject() {
-  return process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  return process.env.CLAUDE_CC_DIR || process.cwd();
 }
 function main() {
   if (process.env.CONTINUOUS_CLAUDE_COORDINATION !== "true") {

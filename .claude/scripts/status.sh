@@ -5,7 +5,7 @@
 
 input=$(cat)
 
-project_dir="${CLAUDE_PROJECT_DIR:-$(pwd)}"
+project_dir="${CLAUDE_CC_DIR:-$(pwd)}"
 cwd=$(echo "$input" | jq -r '.workspace.current_dir // ""' 2>/dev/null)
 [[ -z "$cwd" || "$cwd" == "null" ]] && cwd="$project_dir"
 

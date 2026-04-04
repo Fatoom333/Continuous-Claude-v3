@@ -48,7 +48,7 @@ function extractPythonImports(code) {
   return imports;
 }
 function checkSymbolExists(symbol) {
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || ".";
+  const projectDir = process.env.CLAUDE_CC_DIR || ".";
   // Search for function or class definition
   const funcResults = tldrSearch(`def ${symbol}`, projectDir);
   if (funcResults.length > 0) {

@@ -16,7 +16,7 @@ Create or update `.claude/settings.json` in your project root:
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/skill-activation-prompt.sh"
+            "command": "$CLAUDE_CC_DIR/.claude/hooks/skill-activation-prompt.sh"
           }
         ]
       }
@@ -27,7 +27,7 @@ Create or update `.claude/settings.json` in your project root:
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/post-tool-use-tracker.sh"
+            "command": "$CLAUDE_CC_DIR/.claude/hooks/post-tool-use-tracker.sh"
           }
         ]
       }
@@ -37,15 +37,15 @@ Create or update `.claude/settings.json` in your project root:
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/stop-prettier-formatter.sh"
+            "command": "$CLAUDE_CC_DIR/.claude/hooks/stop-prettier-formatter.sh"
           },
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/stop-build-check-enhanced.sh"
+            "command": "$CLAUDE_CC_DIR/.claude/hooks/stop-build-check-enhanced.sh"
           },
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/error-handling-reminder.sh"
+            "command": "$CLAUDE_CC_DIR/.claude/hooks/error-handling-reminder.sh"
           }
         ]
       }
@@ -191,7 +191,7 @@ Set in your shell profile (`.bashrc`, `.zshrc`, etc.):
 export SKIP_ERROR_REMINDER=1
 
 # Custom project directory (if not using default)
-export CLAUDE_PROJECT_DIR=/path/to/your/project
+export CLAUDE_CC_DIR=/path/to/your/project
 ```
 
 ### Per-Session Environment Variables
@@ -238,7 +238,7 @@ You don't need all hooks. Choose what works for your project:
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/skill-activation-prompt.sh"
+            "command": "$CLAUDE_CC_DIR/.claude/hooks/skill-activation-prompt.sh"
           }
         ]
       }
@@ -258,7 +258,7 @@ You don't need all hooks. Choose what works for your project:
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/post-tool-use-tracker.sh"
+            "command": "$CLAUDE_CC_DIR/.claude/hooks/post-tool-use-tracker.sh"
           }
         ]
       }
@@ -268,7 +268,7 @@ You don't need all hooks. Choose what works for your project:
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/stop-build-check-enhanced.sh"
+            "command": "$CLAUDE_CC_DIR/.claude/hooks/stop-build-check-enhanced.sh"
           }
         ]
       }
@@ -288,7 +288,7 @@ You don't need all hooks. Choose what works for your project:
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/post-tool-use-tracker.sh"
+            "command": "$CLAUDE_CC_DIR/.claude/hooks/post-tool-use-tracker.sh"
           }
         ]
       }
@@ -298,7 +298,7 @@ You don't need all hooks. Choose what works for your project:
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/stop-prettier-formatter.sh"
+            "command": "$CLAUDE_CC_DIR/.claude/hooks/stop-prettier-formatter.sh"
           }
         ]
       }
@@ -312,17 +312,17 @@ You don't need all hooks. Choose what works for your project:
 ### Cache Location
 
 ```
-$CLAUDE_PROJECT_DIR/.claude/tsc-cache/[session_id]/
+$CLAUDE_CC_DIR/.claude/tsc-cache/[session_id]/
 ```
 
 ### Manual Cache Cleanup
 
 ```bash
 # Remove all cached data
-rm -rf $CLAUDE_PROJECT_DIR/.claude/tsc-cache/*
+rm -rf $CLAUDE_CC_DIR/.claude/tsc-cache/*
 
 # Remove specific session
-rm -rf $CLAUDE_PROJECT_DIR/.claude/tsc-cache/[session-id]
+rm -rf $CLAUDE_CC_DIR/.claude/tsc-cache/[session-id]
 ```
 
 ### Automatic Cleanup
@@ -335,7 +335,7 @@ The build-check hook automatically cleans up session cache on successful builds.
 
 1. **Check registration:** Verify hook is in `.claude/settings.json`
 2. **Check permissions:** Run `chmod +x .claude/hooks/*.sh`
-3. **Check path:** Ensure `$CLAUDE_PROJECT_DIR` is set correctly
+3. **Check path:** Ensure `$CLAUDE_CC_DIR` is set correctly
 4. **Check TypeScript:** Run `cd .claude/hooks && npx tsc` to check for errors
 
 ### Path Resolution Issues (FIXED)
@@ -348,7 +348,7 @@ The build-check hook automatically cleans up session cache on successful builds.
 
 **If you still see path issues:**
 
-- Verify `$CLAUDE_PROJECT_DIR` environment variable is set correctly
+- Verify `$CLAUDE_CC_DIR` environment variable is set correctly
 - Check that hooks use absolute paths or paths relative to project root
 - Test hook manually: `echo '{}' | python3 .claude/hooks/hook_launcher.py <hook-name>`
 
@@ -414,7 +414,7 @@ You can create your own hooks for other events:
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/my-custom-bash-guard.sh"
+            "command": "$CLAUDE_CC_DIR/.claude/hooks/my-custom-bash-guard.sh"
           }
         ]
       }

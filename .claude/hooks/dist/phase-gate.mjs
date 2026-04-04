@@ -91,7 +91,7 @@ async function main() {
     console.log("{}");
     return;
   }
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || input.cwd;
+  const projectDir = process.env.CLAUDE_CC_DIR || input.cwd;
   const session = getSessionContext(projectDir, input.session_id);
   if (!session?.active_spec) {
     console.log("{}");

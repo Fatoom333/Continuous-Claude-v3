@@ -118,7 +118,7 @@ async function main() {
     const data = JSON.parse(input);
     const prompt = data.prompt.toLowerCase();
     // Load skill rules (try project first, then global)
-    const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+    const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
     const homeDir = process.env.HOME || "";
     const projectRulesPath = join(
       projectDir,

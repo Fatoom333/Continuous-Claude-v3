@@ -18,7 +18,7 @@ function isValidId(id) {
 import { spawnSync } from "child_process";
 import { join } from "path";
 function getDbPath() {
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
   return join(
     projectDir,
     ".claude",

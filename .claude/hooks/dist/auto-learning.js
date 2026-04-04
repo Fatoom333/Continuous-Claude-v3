@@ -17,10 +17,10 @@ import {
 } from "./shared/learning-extractor.js";
 const PERIODIC_INTERVAL = 5; // Extract periodic learning every N turns
 /**
- * Get state file path - project-local if CLAUDE_PROJECT_DIR set, else global
+ * Get state file path - project-local if CLAUDE_CC_DIR set, else global
  */
 function getStateFilePath() {
-  const projectDir = process.env.CLAUDE_PROJECT_DIR;
+  const projectDir = process.env.CLAUDE_CC_DIR;
   if (projectDir) {
     return join(projectDir, ".claude", "cache", "auto-learning-state.json");
   }
@@ -97,7 +97,7 @@ function buildActionDescription(toolName, toolInput) {
 }
 async function main() {
   const input = JSON.parse(readStdin());
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || input.cwd;
+  const projectDir = process.env.CLAUDE_CC_DIR || input.cwd;
   const state = loadState();
   // Increment turn count and track action
   state.turnCount++;

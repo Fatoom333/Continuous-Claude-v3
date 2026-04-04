@@ -8,7 +8,7 @@ import { fileURLToPath } from "url";
 var __filename = fileURLToPath(import.meta.url);
 var __dirname = dirname(__filename);
 var PROJECT_DIR =
-  process.env.CLAUDE_PROJECT_DIR || resolve(__dirname, "..", "..", "..", "..");
+  process.env.CLAUDE_CC_DIR || resolve(__dirname, "..", "..", "..", "..");
 function callValidateComposition(patternA, patternB, scope, operator = ";") {
   const expr = `${patternA} ${operator}[${scope}] ${patternB}`;
   const cmd = `uv run python scripts/validate_composition.py --json "${expr}"`;
