@@ -6,10 +6,13 @@ import Database from "better-sqlite3";
 function getPpid(pid) {
   if (process.platform === "win32") {
     try {
-      const result = execSync(`wmic process where ProcessId=${pid} get ParentProcessId`, {
-        encoding: "utf-8",
-        timeout: 5e3
-      });
+      const result = execSync(
+        `wmic process where ProcessId=${pid} get ParentProcessId`,
+        {
+          encoding: "utf-8",
+          timeout: 5e3
+        }
+      );
       for (const line of result.split("\n")) {
         const trimmed = line.trim();
         if (/^\d+$/.test(trimmed)) {
@@ -43,7 +46,13 @@ function getTerminalShellPid() {
   }
 }
 function storeSessionAffinity(projectDir, terminalPid, sessionName) {
-  const dbPath = path.join(projectDir, ".claude", "cache", "artifact-index", "context.db");
+  const dbPath = path.join(
+    projectDir,
+    ".claude",
+    "cache",
+    "artifact-index",
+    "context.db"
+  );
   const dbDir = path.dirname(dbPath);
   try {
     if (!fs.existsSync(dbDir)) {
@@ -76,7 +85,7 @@ function extractSessionName(filePath) {
 }
 async function main() {
   const input = JSON.parse(await readStdin());
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
   const homeDir = process.env.HOME || process.env.USERPROFILE || "";
   if (input.tool_name !== "Write") {
     console.log(JSON.stringify({ result: "continue" }));
@@ -100,7 +109,13 @@ async function main() {
     const hasFrontmatter = content.startsWith("---");
     const hasRootSpanId = content.includes("root_span_id:");
     if (!hasRootSpanId) {
-      const stateFile = path.join(homeDir, ".claude", "state", "braintrust_sessions", `${input.session_id}.json`);
+      const stateFile = path.join(
+        homeDir,
+        ".claude",
+        "state",
+        "braintrust_sessions",
+        `${input.session_id}.json`
+      );
       if (fs.existsSync(stateFile)) {
         try {
           const stateContent = fs.readFileSync(stateFile, "utf-8");
@@ -139,11 +154,15 @@ ${content}`;
     }
     const indexScript = path.join(projectDir, "scripts", "artifact_index.py");
     if (fs.existsSync(indexScript)) {
-      const child = spawn("uv", ["run", "python", indexScript, "--file", fullPath], {
-        cwd: projectDir,
-        detached: true,
-        stdio: "ignore"
-      });
+      const child = spawn(
+        "uv",
+        ["run", "python", indexScript, "--file", fullPath],
+        {
+          cwd: projectDir,
+          detached: true,
+          stdio: "ignore"
+        }
+      );
       child.unref();
     }
     console.log(JSON.stringify({ result: "continue" }));

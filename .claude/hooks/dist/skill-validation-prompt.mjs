@@ -40,21 +40,89 @@ var SPECIFIC_TECHNICAL_TERMS = /* @__PURE__ */ new Set([
   "pint"
 ]);
 var TECHNICAL_CONTEXT_INDICATORS = {
-  commit: ["git", "changes", "files", "message", "push", "repository", "branch", "staged"],
+  commit: [
+    "git",
+    "changes",
+    "files",
+    "message",
+    "push",
+    "repository",
+    "branch",
+    "staged"
+  ],
   push: ["git", "remote", "origin", "branch", "repository", "upstream"],
   pull: ["git", "remote", "origin", "branch", "merge", "rebase", "request"],
   merge: ["git", "branch", "conflict", "pull request", "pr"],
   branch: ["git", "checkout", "create", "switch", "feature"],
   checkout: ["git", "branch", "file", "commit", "HEAD"],
-  debug: ["error", "bug", "issue", "logs", "stack trace", "exception", "crash", "breakpoint"],
-  build: ["npm", "yarn", "cargo", "make", "compile", "webpack", "bundle", "project"],
-  implement: ["code", "feature", "function", "class", "method", "api", "interface", "module"],
-  plan: ["implementation", "phase", "architecture", "design", "roadmap", "milestone"],
-  research: ["api", "library", "documentation", "docs", "best practices", "pattern", "codebase"],
-  deploy: ["server", "production", "staging", "kubernetes", "docker", "cloud", "ci/cd"],
+  debug: [
+    "error",
+    "bug",
+    "issue",
+    "logs",
+    "stack trace",
+    "exception",
+    "crash",
+    "breakpoint"
+  ],
+  build: [
+    "npm",
+    "yarn",
+    "cargo",
+    "make",
+    "compile",
+    "webpack",
+    "bundle",
+    "project"
+  ],
+  implement: [
+    "code",
+    "feature",
+    "function",
+    "class",
+    "method",
+    "api",
+    "interface",
+    "module"
+  ],
+  plan: [
+    "implementation",
+    "phase",
+    "architecture",
+    "design",
+    "roadmap",
+    "milestone"
+  ],
+  research: [
+    "api",
+    "library",
+    "documentation",
+    "docs",
+    "best practices",
+    "pattern",
+    "codebase"
+  ],
+  deploy: [
+    "server",
+    "production",
+    "staging",
+    "kubernetes",
+    "docker",
+    "cloud",
+    "ci/cd"
+  ],
   release: ["version", "tag", "changelog", "npm", "package", "publish"],
   fix: ["bug", "error", "issue", "broken", "failing", "test", "regression"],
-  test: ["unit", "integration", "e2e", "coverage", "spec", "jest", "pytest", "vitest"],
+  test: [
+    "unit",
+    "integration",
+    "e2e",
+    "coverage",
+    "spec",
+    "jest",
+    "pytest",
+    "vitest"
+  ],
   validate: ["input", "schema", "data", "form", "field", "type"],
   review: ["code", "pr", "pull request", "changes", "diff"],
   analyze: ["code", "codebase", "performance", "metrics", "logs"],

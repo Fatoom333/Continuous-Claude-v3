@@ -65,3 +65,23 @@ class SchemaValidationError(McpExecutionError):
     """
 
     pass
+
+
+class CircuitOpenError(McpExecutionError):
+    """Raised when a circuit breaker is open and blocking requests.
+
+    This indicates that a server has been failing repeatedly and the
+    circuit breaker has opened to prevent cascading failures.
+
+    Attributes:
+        server_name: Name of the server with open circuit
+        stats: Circuit breaker statistics at time of rejection
+    """
+
+    def __init__(self, server_name: str, stats: "CircuitStats"):
+        self.server_name = server_name
+        self.stats = stats
+        super().__init__(
+            f"Circuit breaker OPEN for server '{server_name}': "
+            f"{stats.failed_calls} failures, last error: {stats.last_failure_message}"
+        )

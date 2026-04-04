@@ -12,7 +12,7 @@ function getOpcDir() {
   if (envOpcDir && existsSync(envOpcDir)) {
     return envOpcDir;
   }
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
   const localOpc = join(projectDir, "opc");
   if (existsSync(localOpc)) {
     return localOpc;
@@ -55,17 +55,21 @@ os.chdir('${opcDir}')
 ${pythonCode}
 `;
   try {
-    const result = spawnSync("uv", ["run", "python", "-c", wrappedCode, ...args], {
-      encoding: "utf-8",
-      maxBuffer: 1024 * 1024,
-      timeout: 5e3,
-      // 5 second timeout - fail gracefully if DB unreachable
-      cwd: opcDir,
-      env: {
-        ...process.env,
-        CONTINUOUS_CLAUDE_DB_URL: getPgConnectionString()
+    const result = spawnSync(
+      "uv",
+      ["run", "python", "-c", wrappedCode, ...args],
+      {
+        encoding: "utf-8",
+        maxBuffer: 1024 * 1024,
+        timeout: 5e3,
+        // 5 second timeout - fail gracefully if DB unreachable
+        cwd: opcDir,
+        env: {
+          ...process.env,
+          CONTINUOUS_CLAUDE_DB_URL: getPgConnectionString()
+        }
       }
-    });
+    );
     return {
       success: result.status === 0,
       stdout: result.stdout?.trim() || "",
@@ -201,12 +205,14 @@ function getSessionId(options = {}) {
     return fileId;
   }
   if (options.debug) {
-    console.error("[session-id] WARNING: No persisted session ID found, generating new one");
+    console.error(
+      "[session-id] WARNING: No persisted session ID found, generating new one"
+    );
   }
   return generateSessionId();
 }
 function getProject() {
-  return process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  return process.env.CLAUDE_CC_DIR || process.cwd();
 }
 
 // src/file-claims.ts

@@ -42,7 +42,7 @@ if global_env.exists():
 load_dotenv()
 
 # Add project root to path for imports (opc/)
-project_dir = os.environ.get("CLAUDE_PROJECT_DIR", str(Path(__file__).parent.parent.parent))
+project_dir = os.environ.get("CLAUDE_CC_DIR", str(Path(__file__).parent.parent.parent))
 sys.path.insert(0, project_dir)
 
 
@@ -174,8 +174,8 @@ async def search_learnings_sqlite(query: str, k: int = 5) -> list[dict[str, Any]
     Returns:
         List of matching learnings with BM25 scores
     """
-    import sqlite3
     import re
+    import sqlite3
 
     # Global SQLite path
     db_path = Path.home() / ".claude" / "cache" / "memory.db"

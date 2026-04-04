@@ -11,13 +11,12 @@ Uses daemon for cache warming (P0-P4)
 Triggers semantic indexing (P5) if call graph exists but FAISS missing
 """
 import os
-import sys
 import json
 import subprocess
 from pathlib import Path
 
 def main():
-    project_dir = Path(os.environ.get('CLAUDE_PROJECT_DIR', os.getcwd()))
+    project_dir = Path(os.environ.get('CLAUDE_CC_DIR', os.getcwd()))
     cache_dir = project_dir / '.claude' / 'cache' / 'tldr'
     semantic_dir = cache_dir / 'semantic'
 

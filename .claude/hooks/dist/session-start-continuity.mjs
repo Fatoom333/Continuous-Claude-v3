@@ -15,7 +15,7 @@ function parseHandoffDirName(dirName) {
   return { sessionName: dirName, uuidShort: null };
 }
 function findSessionHandoffWithUUID(sessionName, sessionId) {
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
   const handoffsBase = path.join(projectDir, "thoughts", "shared", "handoffs");
   if (!fs.existsSync(handoffsBase)) return null;
   const uuidShort = sessionId.replace(/-/g, "").slice(0, 8).toLowerCase();
@@ -67,13 +67,21 @@ function extractYamlFields(content) {
   };
 }
 function extractLedgerSection(handoffContent) {
-  const match = handoffContent.match(/(?:^|\n)## Ledger\n([\s\S]*?)(?=\n---\n|\n## [^#]|$)/);
+  const match = handoffContent.match(
+    /(?:^|\n)## Ledger\n([\s\S]*?)(?=\n---\n|\n## [^#]|$)/
+  );
   return match ? `## Ledger
 ${match[1].trim()}` : null;
 }
 function findSessionHandoff(sessionName) {
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
-  const handoffDir = path.join(projectDir, "thoughts", "shared", "handoffs", sessionName);
+  const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
+  const handoffDir = path.join(
+    projectDir,
+    "thoughts",
+    "shared",
+    "handoffs",
+    sessionName
+  );
   if (!fs.existsSync(handoffDir)) return null;
   const handoffFiles = fs.readdirSync(handoffDir).filter((f) => isHandoffFile(f)).sort((a, b) => {
     const statA = fs.statSync(path.join(handoffDir, a));
@@ -85,11 +93,18 @@ function findSessionHandoff(sessionName) {
 function pruneLedger(ledgerPath) {
   let content = fs.readFileSync(ledgerPath, "utf-8");
   const originalLength = content.length;
-  content = content.replace(/\n### Session Ended \([^)]+\)\n- Reason: \w+\n/g, "");
-  const agentReportsMatch = content.match(/## Agent Reports\n([\s\S]*?)(?=\n## |$)/);
+  content = content.replace(
+    /\n### Session Ended \([^)]+\)\n- Reason: \w+\n/g,
+    ""
+  );
+  const agentReportsMatch = content.match(
+    /## Agent Reports\n([\s\S]*?)(?=\n## |$)/
+  );
   if (agentReportsMatch) {
     const agentReportsSection = agentReportsMatch[0];
-    const reports = agentReportsSection.match(/### [^\n]+ \(\d{4}-\d{2}-\d{2}[^)]*\)[\s\S]*?(?=\n### |\n## |$)/g);
+    const reports = agentReportsSection.match(
+      /### [^\n]+ \(\d{4}-\d{2}-\d{2}[^)]*\)[\s\S]*?(?=\n### |\n## |$)/g
+    );
     if (reports && reports.length > 10) {
       const keptReports = reports.slice(-10);
       const newAgentReportsSection = "## Agent Reports\n" + keptReports.join("");
@@ -103,7 +118,9 @@ function pruneLedger(ledgerPath) {
 }
 function getLatestHandoff(handoffDir) {
   if (!fs.existsSync(handoffDir)) return null;
-  const handoffFiles = fs.readdirSync(handoffDir).filter((f) => (f.startsWith("task-") || f.startsWith("auto-handoff-")) && isHandoffFile(f)).sort((a, b) => {
+  const handoffFiles = fs.readdirSync(handoffDir).filter(
+    (f) => (f.startsWith("task-") || f.startsWith("auto-handoff-")) && isHandoffFile(f)
+  ).sort((a, b) => {
     const statA = fs.statSync(path.join(handoffDir, a));
     const statB = fs.statSync(path.join(handoffDir, b));
     return statB.mtime.getTime() - statA.mtime.getTime();
@@ -118,16 +135,22 @@ function getLatestHandoff(handoffDir) {
   if (isAutoHandoff) {
     const typeMatch = content.match(/type:\s*auto-handoff/i);
     status = typeMatch ? "auto-handoff" : "unknown";
-    const timestampMatch = latestFile.match(/auto-handoff-(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2})/);
+    const timestampMatch = latestFile.match(
+      /auto-handoff-(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2})/
+    );
     taskNumber = timestampMatch ? timestampMatch[1] : "auto";
-    const inProgressMatch = content.match(/## In Progress\n([\s\S]*?)(?=\n## |$)/);
+    const inProgressMatch = content.match(
+      /## In Progress\n([\s\S]*?)(?=\n## |$)/
+    );
     summary = inProgressMatch ? inProgressMatch[1].trim().split("\n").slice(0, 3).join("; ").substring(0, 150) : "Auto-handoff from pre-compact";
   } else {
     const taskMatch = latestFile.match(/task-(\d+)/);
     taskNumber = taskMatch ? taskMatch[1] : "??";
     const statusMatch = content.match(/status:\s*(success|partial|blocked)/i);
     status = statusMatch ? statusMatch[1] : "unknown";
-    const summaryMatch = content.match(/## What Was Done\n([\s\S]*?)(?=\n## |$)/);
+    const summaryMatch = content.match(
+      /## What Was Done\n([\s\S]*?)(?=\n## |$)/
+    );
     summary = summaryMatch ? summaryMatch[1].trim().split("\n").slice(0, 2).join("; ").substring(0, 150) : "No summary available";
   }
   return {
@@ -140,8 +163,14 @@ function getLatestHandoff(handoffDir) {
 }
 function getUnmarkedHandoffs() {
   try {
-    const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
-    const dbPath = path.join(projectDir, ".claude", "cache", "artifact-index", "context.db");
+    const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
+    const dbPath = path.join(
+      projectDir,
+      ".claude",
+      "cache",
+      "artifact-index",
+      "context.db"
+    );
     if (!fs.existsSync(dbPath)) {
       return [];
     }
@@ -154,7 +183,12 @@ function getUnmarkedHandoffs() {
     }
     return result.trim().split("\n").map((line) => {
       const [id, session_name, task_number, task_summary] = line.split("|");
-      return { id, session_name, task_number: task_number || null, task_summary: task_summary || "" };
+      return {
+        id,
+        session_name,
+        task_number: task_number || null,
+        task_summary: task_summary || ""
+      };
     });
   } catch (error) {
     return [];
@@ -172,7 +206,14 @@ function ensureMemoryDaemon() {
     }
   }
   const possibleLocations = [
-    path.join(os.homedir(), ".claude", "opc", "scripts", "core", "memory_daemon.py"),
+    path.join(
+      os.homedir(),
+      ".claude",
+      "opc",
+      "scripts",
+      "core",
+      "memory_daemon.py"
+    ),
     path.join(os.homedir(), ".claude", "scripts", "core", "memory_daemon.py")
   ];
   for (const daemonScript of possibleLocations) {
@@ -194,7 +235,7 @@ function ensureMemoryDaemon() {
 }
 async function main() {
   const input = JSON.parse(await readStdin());
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
   ensureMemoryDaemon();
   const sessionType = input.source || input.type;
   let message = "";
@@ -227,7 +268,9 @@ async function main() {
             const ledgerSection = extractLedgerSection(content);
             if (ledgerSection) {
               const goalMatch = ledgerSection.match(/\*\*Goal:\*\*\s*([^\n]+)/);
-              const nowMatch = ledgerSection.match(/### Now\n\[?-?>?\]?\s*([^\n]+)/);
+              const nowMatch = ledgerSection.match(
+                /### Now\n\[?-?>?\]?\s*([^\n]+)/
+              );
               goalSummary = goalMatch ? goalMatch[1].trim().substring(0, 100) : "No goal found";
               currentFocus = nowMatch ? nowMatch[1].trim() : "Unknown";
               ledgerContent = ledgerSection;
@@ -250,12 +293,20 @@ async function main() {
       }
       if (mostRecentLedger) {
         usedHandoffLedger = true;
-        const { sessionName, goalSummary, currentFocus, content: ledgerSection, handoffPath } = mostRecentLedger;
+        const {
+          sessionName,
+          goalSummary,
+          currentFocus,
+          content: ledgerSection,
+          handoffPath
+        } = mostRecentLedger;
         const handoffFilename = path.basename(handoffPath);
         if (sessionType === "startup") {
           message = `\u{1F4CB} Handoff Ledger: ${sessionName} \u2192 ${currentFocus} (run /resume_handoff to continue)`;
         } else {
-          console.error(`\u2713 Handoff Ledger loaded: ${sessionName} \u2192 ${currentFocus}`);
+          console.error(
+            `\u2713 Handoff Ledger loaded: ${sessionName} \u2192 ${currentFocus}`
+          );
           message = `[${sessionType}] Loaded from handoff: ${handoffFilename} | Goal: ${goalSummary} | Focus: ${currentFocus}`;
           if (sessionType === "clear" || sessionType === "compact") {
             additionalContext = `Handoff Ledger loaded from ${handoffFilename}:
@@ -311,7 +362,9 @@ Full handoff available at: ${handoffPath}
       return statB.mtime.getTime() - statA.mtime.getTime();
     });
     if (ledgerFiles.length > 0) {
-      console.error("DEPRECATED: Using legacy ledger file. Migrate to handoff format with /create_handoff");
+      console.error(
+        "DEPRECATED: Using legacy ledger file. Migrate to handoff format with /create_handoff"
+      );
       const mostRecent = ledgerFiles[0];
       const ledgerPath = path.join(ledgerDir, mostRecent);
       pruneLedger(ledgerPath);
@@ -321,7 +374,13 @@ Full handoff available at: ${handoffPath}
       const goalSummary = goalMatch ? goalMatch[1].trim().split("\n")[0].substring(0, 100) : "No goal found";
       const currentFocus = nowMatch ? nowMatch[1].trim() : "Unknown";
       const sessionName = mostRecent.replace("CONTINUITY_CLAUDE-", "").replace(".md", "");
-      const handoffDir = path.join(projectDir, "thoughts", "shared", "handoffs", sessionName);
+      const handoffDir = path.join(
+        projectDir,
+        "thoughts",
+        "shared",
+        "handoffs",
+        sessionName
+      );
       const latestHandoff = getLatestHandoff(handoffDir);
       if (sessionType === "startup") {
         let startupMsg = `\u{1F4CB} Ledger available: ${sessionName} \u2192 ${currentFocus}`;
@@ -381,7 +440,9 @@ ${handoffLabel} (${latestHandoff.filename}):
 `;
             const truncatedHandoff = handoffContent.length > 2e3 ? handoffContent.substring(0, 2e3) + "\n\n[... truncated, read full file if needed]" : handoffContent;
             additionalContext += truncatedHandoff;
-            const allHandoffs = fs.readdirSync(handoffDir).filter((f) => (f.startsWith("task-") || f.startsWith("auto-handoff-")) && isHandoffFile(f)).sort((a, b) => {
+            const allHandoffs = fs.readdirSync(handoffDir).filter(
+              (f) => (f.startsWith("task-") || f.startsWith("auto-handoff-")) && isHandoffFile(f)
+            ).sort((a, b) => {
               const statA = fs.statSync(path.join(handoffDir, a));
               const statB = fs.statSync(path.join(handoffDir, b));
               return statB.mtime.getTime() - statA.mtime.getTime();
@@ -403,7 +464,9 @@ All handoffs in ${handoffDir}:
       }
     } else {
       if (sessionType !== "startup") {
-        console.error(`\u26A0 No ledger found. Run /continuity_ledger to track session state.`);
+        console.error(
+          `\u26A0 No ledger found. Run /continuity_ledger to track session state.`
+        );
         message = `[${sessionType}] No ledger found. Consider running /continuity_ledger to track session state.`;
       }
     }

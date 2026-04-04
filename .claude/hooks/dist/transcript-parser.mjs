@@ -98,7 +98,9 @@ function generateAutoHandoff(summary, sessionName) {
   const timestamp = (/* @__PURE__ */ new Date()).toISOString();
   const dateOnly = timestamp.split("T")[0];
   const lines = [];
-  const inProgress = summary.lastTodos.filter((t) => t.status === "in_progress");
+  const inProgress = summary.lastTodos.filter(
+    (t) => t.status === "in_progress"
+  );
   const pending = summary.lastTodos.filter((t) => t.status === "pending");
   const completed = summary.lastTodos.filter((t) => t.status === "completed");
   const currentTask = inProgress[0]?.content || pending[0]?.content || "Continue from auto-compact";
@@ -148,13 +150,19 @@ function generateAutoHandoff(summary, sessionName) {
   lines.push('  - auto_compact: "Context limit reached, auto-compacted"');
   lines.push("");
   lines.push("findings:");
-  lines.push(`  - tool_calls: "${summary.recentToolCalls.length} recent tool calls"`);
-  lines.push(`  - files_modified: "${summary.filesModified.length} files changed"`);
+  lines.push(
+    `  - tool_calls: "${summary.recentToolCalls.length} recent tool calls"`
+  );
+  lines.push(
+    `  - files_modified: "${summary.filesModified.length} files changed"`
+  );
   lines.push("");
   lines.push("worked:");
   const successfulTools = summary.recentToolCalls.filter((t) => t.success);
   if (successfulTools.length > 0) {
-    lines.push(`  - "${successfulTools.map((t) => t.name).join(", ")} completed successfully"`);
+    lines.push(
+      `  - "${successfulTools.map((t) => t.name).join(", ")} completed successfully"`
+    );
   } else {
     lines.push("  []");
   }
@@ -162,7 +170,9 @@ function generateAutoHandoff(summary, sessionName) {
   lines.push("failed:");
   const failedTools = summary.recentToolCalls.filter((t) => !t.success);
   if (failedTools.length > 0) {
-    lines.push(`  - "${failedTools.map((t) => t.name).join(", ")} encountered errors"`);
+    lines.push(
+      `  - "${failedTools.map((t) => t.name).join(", ")} encountered errors"`
+    );
   } else {
     lines.push("  []");
   }
@@ -196,7 +206,9 @@ var isMainModule = import.meta.url === `file://${process.argv[1]}`;
 if (isMainModule) {
   const args = process.argv.slice(2);
   if (args.length === 0) {
-    console.log("Usage: npx tsx transcript-parser.ts <transcript-path> [session-name]");
+    console.log(
+      "Usage: npx tsx transcript-parser.ts <transcript-path> [session-name]"
+    );
     process.exit(1);
   }
   const transcriptPath = args[0];

@@ -42,7 +42,7 @@ import asyncio
 import json
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -54,7 +54,7 @@ if global_env.exists():
 load_dotenv()
 
 # Add project to path
-project_dir = os.environ.get("CLAUDE_PROJECT_DIR", str(Path(__file__).parent.parent.parent))
+project_dir = os.environ.get("CLAUDE_CC_DIR", str(Path(__file__).parent.parent.parent))
 sys.path.insert(0, project_dir)
 
 # Valid learning types for --type parameter
@@ -97,11 +97,11 @@ async def store_learning_v2(
         dict with success status, memory_id, or skipped info for duplicates
     """
     try:
+        from scripts.core.db.embedding_service import EmbeddingService
         from scripts.core.db.memory_factory import (
             create_memory_service,
             get_default_backend,
         )
-        from scripts.core.db.embedding_service import EmbeddingService
     except ImportError as e:
         return {"success": False, "error": f"Memory service not available: {e}"}
 
@@ -146,7 +146,7 @@ async def store_learning_v2(
         metadata = {
             "type": "session_learning",
             "session_id": session_id,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         if learning_type:
@@ -199,11 +199,11 @@ async def store_learning(
         dict with success status and memory_id
     """
     try:
+        from scripts.core.db.embedding_service import EmbeddingService
         from scripts.core.db.memory_factory import (
             create_memory_service,
             get_default_backend,
         )
-        from scripts.core.db.embedding_service import EmbeddingService
     except ImportError as e:
         return {"success": False, "error": f"Memory service not available: {e}"}
 
@@ -227,7 +227,7 @@ async def store_learning(
     metadata = {
         "type": "session_learning",
         "session_id": session_id,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "categories": {
             "worked": bool(worked and worked.lower() != "none"),
             "failed": bool(failed and failed.lower() != "none"),

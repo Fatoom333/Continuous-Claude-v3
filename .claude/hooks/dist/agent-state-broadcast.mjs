@@ -20,9 +20,14 @@ function extractTodos(input) {
   return null;
 }
 function broadcastState(agentId, toolName, todos) {
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
-  const scriptPath = join(projectDir, "scripts", "agentica_patterns", "agent_state_broadcast.py");
-  const now = (/* @__PURE__ */ new Date()).toISOString();
+  const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
+  const scriptPath = join(
+    projectDir,
+    "scripts",
+    "agentica_patterns",
+    "agent_state_broadcast.py",
+  );
+  const now = /* @__PURE__ */ new Date().toISOString();
   const pythonScript = `
 import asyncio
 import json
@@ -50,14 +55,17 @@ asyncio.run(main())
 `;
   const todosJson = todos ? JSON.stringify(todos) : "null";
   try {
-    spawnSync("python3", ["-c", pythonScript, agentId, toolName, now, todosJson], {
-      encoding: "utf-8",
-      timeout: 5e3,
-      // 5 second timeout
-      maxBuffer: 1024 * 64
-    });
-  } catch {
-  }
+    spawnSync(
+      "python3",
+      ["-c", pythonScript, agentId, toolName, now, todosJson],
+      {
+        encoding: "utf-8",
+        timeout: 5e3,
+        // 5 second timeout
+        maxBuffer: 1024 * 64,
+      },
+    );
+  } catch {}
 }
 async function main() {
   let input;

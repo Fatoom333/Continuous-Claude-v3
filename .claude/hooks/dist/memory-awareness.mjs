@@ -10,7 +10,7 @@ function getOpcDir() {
   if (envOpcDir && existsSync(envOpcDir)) {
     return envOpcDir;
   }
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
   const localOpc = join(projectDir, "opc");
   if (existsSync(localOpc)) {
     return localOpc;
@@ -192,28 +192,32 @@ function checkMemoryRelevance(intent, projectDir) {
   const opcDir = getOpcDir();
   if (!opcDir) return null;
   const searchTerm = intent.replace(/[_\/]/g, " ").replace(/\b\w{1,2}\b/g, "").replace(/\s+/g, " ").trim();
-  const result = spawnSync("uv", [
-    "run",
-    "python",
-    "scripts/core/recall_learnings.py",
-    "--query",
-    searchTerm,
-    // Single keyword for text match
-    "--k",
-    "3",
-    "--json",
-    "--text-only"
-    // Fast text search for hints
-  ], {
-    encoding: "utf-8",
-    cwd: opcDir,
-    env: {
-      ...process.env,
-      PYTHONPATH: opcDir
-    },
-    timeout: 5e3
-    // 5s timeout for fast check
-  });
+  const result = spawnSync(
+    "uv",
+    [
+      "run",
+      "python",
+      "scripts/core/recall_learnings.py",
+      "--query",
+      searchTerm,
+      // Single keyword for text match
+      "--k",
+      "3",
+      "--json",
+      "--text-only"
+      // Fast text search for hints
+    ],
+    {
+      encoding: "utf-8",
+      cwd: opcDir,
+      env: {
+        ...process.env,
+        PYTHONPATH: opcDir
+      },
+      timeout: 5e3
+      // 5s timeout for fast check
+    }
+  );
   if (result.status !== 0 || !result.stdout) {
     return null;
   }
@@ -242,7 +246,7 @@ function checkMemoryRelevance(intent, projectDir) {
 }
 async function main() {
   const input = JSON.parse(readStdin());
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || input.cwd;
+  const projectDir = process.env.CLAUDE_CC_DIR || input.cwd;
   if (process.env.CLAUDE_AGENT_ID) {
     return;
   }
@@ -258,18 +262,18 @@ async function main() {
   }
   const match = checkMemoryRelevance(intent, projectDir);
   if (match) {
-    const resultLines = match.results.map(
-      (r, i) => `${i + 1}. [${r.type}] ${r.content} (id: ${r.id})`
-    ).join("\n");
+    const resultLines = match.results.map((r, i) => `${i + 1}. [${r.type}] ${r.content} (id: ${r.id})`).join("\n");
     const claudeContext = `MEMORY MATCH (${match.count} results) for "${intent}":
 ${resultLines}
 Use /recall "${intent}" for full content. Disclose if helpful.`;
-    console.log(JSON.stringify({
-      hookSpecificOutput: {
-        hookEventName: "UserPromptSubmit",
-        additionalContext: claudeContext
-      }
-    }));
+    console.log(
+      JSON.stringify({
+        hookSpecificOutput: {
+          hookEventName: "UserPromptSubmit",
+          additionalContext: claudeContext
+        }
+      })
+    );
   }
 }
 main().catch(() => {

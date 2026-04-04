@@ -95,7 +95,7 @@ def ensure_tldr_daemon() -> str:
     Returns:
         Status message string for Claude's context
     """
-    project_dir = os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd())
+    project_dir = os.environ.get("CLAUDE_CC_DIR", os.getcwd())
     tldr_dir = Path(project_dir) / ".tldr"
     env_file = os.environ.get("CLAUDE_ENV_FILE")
 
@@ -165,7 +165,7 @@ def ensure_semantic_index() -> str | None:
     Returns:
         Status message if action taken, None otherwise
     """
-    project_dir = os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd())
+    project_dir = os.environ.get("CLAUDE_CC_DIR", os.getcwd())
     tldr_dir = Path(project_dir) / ".tldr"
     semantic_dir = tldr_dir / "cache" / "semantic"
     index_file = semantic_dir / "index.faiss"
@@ -255,7 +255,7 @@ def ensure_memory_daemon() -> str | None:
 
 def get_project_dir() -> Path:
     """Get project directory from env or cwd."""
-    return Path(os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd()))
+    return Path(os.environ.get("CLAUDE_CC_DIR", os.getcwd()))
 
 
 def get_ppid(pid: int) -> int | None:
@@ -731,7 +731,7 @@ def main() -> None:
                 session_name = most_recent["session_name"]
                 current_focus = most_recent["now"]
                 handoff_filename = most_recent["handoff_path"].name
-                is_yaml = most_recent["is_yaml"]
+                most_recent["is_yaml"]
 
                 if session_type == "startup":
                     # Fresh startup: brief notification

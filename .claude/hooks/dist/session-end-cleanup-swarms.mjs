@@ -11,13 +11,13 @@ async function main() {
     return;
   }
   const sessionId = input.session_id || "unknown-session";
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
   const dbPath = join(
     projectDir,
     ".claude",
     "cache",
     "agentica-coordination",
-    "coordination.db"
+    "coordination.db",
   );
   if (!existsSync(dbPath)) {
     console.log(JSON.stringify({ result: "continue" }));
@@ -65,28 +65,32 @@ conn.close()
 `;
     const result = spawnSync("python3", ["-c", cleanup, dbPath, sessionId], {
       encoding: "utf-8",
-      maxBuffer: 1024 * 1024
+      maxBuffer: 1024 * 1024,
     });
     if (result.status !== 0) {
       console.error("SessionEnd cleanup error:", result.stderr);
     }
-    const cleanupScript = join(projectDir, "scripts", "agentica", "cleanup_orphans.py");
+    const cleanupScript = join(
+      projectDir,
+      "scripts",
+      "agentica",
+      "cleanup_orphans.py",
+    );
     if (existsSync(cleanupScript)) {
       try {
-        const orphanCleanup = spawn("uv", [
-          "run",
-          "python",
-          cleanupScript,
-          "--kill",
-          "--tier",
-          "1"
-        ], {
-          detached: true,
-          stdio: "ignore",
-          cwd: projectDir
-        });
+        const orphanCleanup = spawn(
+          "uv",
+          ["run", "python", cleanupScript, "--kill", "--tier", "1"],
+          {
+            detached: true,
+            stdio: "ignore",
+            cwd: projectDir,
+          },
+        );
         orphanCleanup.unref();
-        console.error("SessionEnd: Triggered tier-1 orphan cleanup (fire-and-forget)");
+        console.error(
+          "SessionEnd: Triggered tier-1 orphan cleanup (fire-and-forget)",
+        );
       } catch (spawnErr) {
         console.error("SessionEnd: Failed to spawn orphan cleanup:", spawnErr);
       }

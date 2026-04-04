@@ -84,21 +84,89 @@ var SPECIFIC_TECHNICAL_TERMS = /* @__PURE__ */ new Set([
   "pint"
 ]);
 var TECHNICAL_CONTEXT_INDICATORS = {
-  commit: ["git", "changes", "files", "message", "push", "repository", "branch", "staged"],
+  commit: [
+    "git",
+    "changes",
+    "files",
+    "message",
+    "push",
+    "repository",
+    "branch",
+    "staged"
+  ],
   push: ["git", "remote", "origin", "branch", "repository", "upstream"],
   pull: ["git", "remote", "origin", "branch", "merge", "rebase", "request"],
   merge: ["git", "branch", "conflict", "pull request", "pr"],
   branch: ["git", "checkout", "create", "switch", "feature"],
   checkout: ["git", "branch", "file", "commit", "HEAD"],
-  debug: ["error", "bug", "issue", "logs", "stack trace", "exception", "crash", "breakpoint"],
-  build: ["npm", "yarn", "cargo", "make", "compile", "webpack", "bundle", "project"],
-  implement: ["code", "feature", "function", "class", "method", "api", "interface", "module"],
-  plan: ["implementation", "phase", "architecture", "design", "roadmap", "milestone"],
-  research: ["api", "library", "documentation", "docs", "best practices", "pattern", "codebase"],
-  deploy: ["server", "production", "staging", "kubernetes", "docker", "cloud", "ci/cd"],
+  debug: [
+    "error",
+    "bug",
+    "issue",
+    "logs",
+    "stack trace",
+    "exception",
+    "crash",
+    "breakpoint"
+  ],
+  build: [
+    "npm",
+    "yarn",
+    "cargo",
+    "make",
+    "compile",
+    "webpack",
+    "bundle",
+    "project"
+  ],
+  implement: [
+    "code",
+    "feature",
+    "function",
+    "class",
+    "method",
+    "api",
+    "interface",
+    "module"
+  ],
+  plan: [
+    "implementation",
+    "phase",
+    "architecture",
+    "design",
+    "roadmap",
+    "milestone"
+  ],
+  research: [
+    "api",
+    "library",
+    "documentation",
+    "docs",
+    "best practices",
+    "pattern",
+    "codebase"
+  ],
+  deploy: [
+    "server",
+    "production",
+    "staging",
+    "kubernetes",
+    "docker",
+    "cloud",
+    "ci/cd"
+  ],
   release: ["version", "tag", "changelog", "npm", "package", "publish"],
   fix: ["bug", "error", "issue", "broken", "failing", "test", "regression"],
-  test: ["unit", "integration", "e2e", "coverage", "spec", "jest", "pytest", "vitest"],
+  test: [
+    "unit",
+    "integration",
+    "e2e",
+    "coverage",
+    "spec",
+    "jest",
+    "pytest",
+    "vitest"
+  ],
   validate: ["input", "schema", "data", "form", "field", "type"],
   review: ["code", "pr", "pull request", "changes", "diff"],
   analyze: ["code", "codebase", "performance", "metrics", "logs"],
@@ -136,21 +204,26 @@ function shouldValidateWithLLM(match) {
 
 // src/skill-activation-prompt.ts
 var PATTERN_AGENT_MAP = {
-  "swarm": "research-agent",
-  "hierarchical": "kraken",
-  "pipeline": "kraken",
-  "generator_critic": "review-agent",
-  "adversarial": "validate-agent",
-  "map_reduce": "kraken",
-  "jury": "validate-agent",
-  "blackboard": "maestro",
-  "circuit_breaker": "kraken",
-  "chain_of_responsibility": "maestro",
-  "event_driven": "kraken"
+  swarm: "research-agent",
+  hierarchical: "kraken",
+  pipeline: "kraken",
+  generator_critic: "review-agent",
+  adversarial: "validate-agent",
+  map_reduce: "kraken",
+  jury: "validate-agent",
+  blackboard: "maestro",
+  circuit_breaker: "kraken",
+  chain_of_responsibility: "maestro",
+  event_driven: "kraken"
 };
 function runPatternInference(prompt, projectDir) {
   try {
-    const scriptPath = join2(projectDir, "scripts", "agentica_patterns", "pattern_inference.py");
+    const scriptPath = join2(
+      projectDir,
+      "scripts",
+      "agentica_patterns",
+      "pattern_inference.py"
+    );
     if (!existsSync2(scriptPath)) {
       return null;
     }
@@ -269,10 +342,20 @@ async function main() {
       process.exit(0);
     }
     const prompt = data.prompt.toLowerCase();
-    const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+    const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
     const homeDir = process.env.HOME || process.env.USERPROFILE || "";
-    const projectRulesPath = join2(projectDir, ".claude", "skills", "skill-rules.json");
-    const globalRulesPath = join2(homeDir, ".claude", "skills", "skill-rules.json");
+    const projectRulesPath = join2(
+      projectDir,
+      ".claude",
+      "skills",
+      "skill-rules.json"
+    );
+    const globalRulesPath = join2(
+      homeDir,
+      ".claude",
+      "skills",
+      "skill-rules.json"
+    );
     let rulesPath = "";
     if (existsSync2(projectRulesPath)) {
       rulesPath = projectRulesPath;
@@ -304,7 +387,9 @@ async function main() {
             skillDescription: config.description,
             enforcement: config.enforcement
           };
-          const needsValidation = shouldValidateWithLLM(skillMatchForValidation);
+          const needsValidation = shouldValidateWithLLM(
+            skillMatchForValidation
+          );
           matchedSkills.push({
             name: skillName,
             matchType: "keyword",
@@ -354,7 +439,9 @@ async function main() {
               skillDescription: config.description,
               enforcement: config.enforcement
             };
-            const needsValidation = shouldValidateWithLLM(skillMatchForValidation);
+            const needsValidation = shouldValidateWithLLM(
+              skillMatchForValidation
+            );
             matchedAgents.push({
               name: agentName,
               matchType: "keyword",
@@ -388,9 +475,16 @@ async function main() {
       }
     }
     if (matchedSkills.length > 0 || matchedAgents.length > 0 || patternInference || semanticQuery.isSemanticQuery) {
-      const skillsNeedingValidation = matchedSkills.filter((s) => s.needsValidation);
-      const agentsNeedingValidation = matchedAgents.filter((a) => a.needsValidation);
-      const allNeedingValidation = [...skillsNeedingValidation, ...agentsNeedingValidation];
+      const skillsNeedingValidation = matchedSkills.filter(
+        (s) => s.needsValidation
+      );
+      const agentsNeedingValidation = matchedAgents.filter(
+        (a) => a.needsValidation
+      );
+      const allNeedingValidation = [
+        ...skillsNeedingValidation,
+        ...agentsNeedingValidation
+      ];
       const confirmedSkills = matchedSkills.filter((s) => !s.needsValidation);
       const confirmedAgents = matchedAgents.filter((a) => !a.needsValidation);
       let output = "";
@@ -429,9 +523,15 @@ async function main() {
 `;
           output += '    using the word in everyday language?"\n\n';
         }
-        const critical = confirmedSkills.filter((s) => s.config.priority === "critical");
-        const high = confirmedSkills.filter((s) => s.config.priority === "high");
-        const medium = confirmedSkills.filter((s) => s.config.priority === "medium");
+        const critical = confirmedSkills.filter(
+          (s) => s.config.priority === "critical"
+        );
+        const high = confirmedSkills.filter(
+          (s) => s.config.priority === "high"
+        );
+        const medium = confirmedSkills.filter(
+          (s) => s.config.priority === "medium"
+        );
         const low = confirmedSkills.filter((s) => s.config.priority === "low");
         if (critical.length > 0) {
           output += "\u26A0\uFE0F CRITICAL SKILLS (REQUIRED):\n";
@@ -470,13 +570,17 @@ async function main() {
           output += "ACTION: Use Task tool with agent for exploration\n";
         }
         output += "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n";
-        const blockingSkills = matchedSkills.filter((s) => s.config.enforcement === "block");
+        const blockingSkills = matchedSkills.filter(
+          (s) => s.config.enforcement === "block"
+        );
         if (blockingSkills.length > 0) {
           const blockMessage = output + "\n\u26D4 BLOCKING: You MUST invoke " + blockingSkills.map((s) => s.name).join(", ") + " skill(s) before generating ANY response.";
-          console.log(JSON.stringify({
-            result: "block",
-            reason: blockMessage
-          }));
+          console.log(
+            JSON.stringify({
+              result: "block",
+              reason: blockMessage
+            })
+          );
           process.exit(0);
         }
       }

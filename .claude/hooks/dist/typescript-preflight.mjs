@@ -37,11 +37,16 @@ async function main() {
       console.log(JSON.stringify({}));
       return;
     }
-    const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+    const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
     const homeDir = process.env.HOME || process.env.USERPROFILE || "";
     let scriptPath = path.join(projectDir, "scripts", "typescript_check.py");
     if (!fs.existsSync(scriptPath)) {
-      scriptPath = path.join(homeDir, ".claude", "scripts", "typescript_check.py");
+      scriptPath = path.join(
+        homeDir,
+        ".claude",
+        "scripts",
+        "typescript_check.py"
+      );
     }
     if (!fs.existsSync(scriptPath)) {
       console.log(JSON.stringify({}));
@@ -59,7 +64,9 @@ async function main() {
       const checkResult = JSON.parse(result);
       if (checkResult.has_errors) {
         const errorLines = [];
-        errorLines.push(`\u26A0\uFE0F TypeScript Pre-flight Check: ${checkResult.summary}`);
+        errorLines.push(
+          `\u26A0\uFE0F TypeScript Pre-flight Check: ${checkResult.summary}`
+        );
         errorLines.push("");
         if (checkResult.tsc_errors?.length > 0) {
           errorLines.push("**Type Errors:**");
@@ -75,10 +82,12 @@ async function main() {
         }
         errorLines.push("");
         errorLines.push("Fix these errors before proceeding.");
-        console.log(JSON.stringify({
-          decision: "block",
-          reason: errorLines.join("\n")
-        }));
+        console.log(
+          JSON.stringify({
+            decision: "block",
+            reason: errorLines.join("\n")
+          })
+        );
         return;
       }
       console.log(JSON.stringify({}));
@@ -89,12 +98,14 @@ async function main() {
           try {
             const checkResult = JSON.parse(execError.stdout);
             if (checkResult.has_errors) {
-              console.log(JSON.stringify({
-                decision: "block",
-                reason: `\u26A0\uFE0F TypeScript Pre-flight: ${checkResult.summary}
+              console.log(
+                JSON.stringify({
+                  decision: "block",
+                  reason: `\u26A0\uFE0F TypeScript Pre-flight: ${checkResult.summary}
 
 Fix before proceeding.`
-              }));
+                })
+              );
               return;
             }
           } catch {

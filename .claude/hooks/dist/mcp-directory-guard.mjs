@@ -9,7 +9,7 @@ function getOpcDir() {
   if (envOpcDir && existsSync(envOpcDir)) {
     return envOpcDir;
   }
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
   const localOpc = join(projectDir, "opc");
   if (existsSync(localOpc)) {
     return localOpc;
@@ -29,10 +29,7 @@ function getOpcDir() {
 var SCRIPT_PATH_PATTERN = /\bscripts\/(mcp|core)\//;
 function buildCdPrefixPattern(opcDir) {
   const escapedDir = opcDir ? opcDir.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") : "";
-  const variants = [
-    "\\$CLAUDE_OPC_DIR",
-    "\\$\\{CLAUDE_OPC_DIR\\}"
-  ];
+  const variants = ["\\$CLAUDE_OPC_DIR", "\\$\\{CLAUDE_OPC_DIR\\}"];
   if (escapedDir) {
     variants.push(escapedDir);
   }

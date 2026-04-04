@@ -25,7 +25,7 @@ from pathlib import Path
 
 def get_project_dir() -> Path:
     """Get the Claude project directory."""
-    return Path(os.environ.get("CLAUDE_PROJECT_DIR", Path.cwd()))
+    return Path(os.environ.get("CLAUDE_CC_DIR", Path.cwd()))
 
 
 def get_current_branch(project_dir: Path) -> str:
@@ -349,7 +349,7 @@ def handle_edit_tool(tool_info: dict) -> None:
     tsc_cmd = get_tsc_command(repo)
 
     commands_file = cache_dir / "commands.txt"
-    commands_tmp = cache_dir / "commands.txt.tmp"
+    cache_dir / "commands.txt.tmp"
 
     # Read existing commands
     existing_commands = set()

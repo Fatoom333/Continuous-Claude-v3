@@ -12,7 +12,7 @@ function getOpcDir() {
   if (envOpcDir && existsSync(envOpcDir)) {
     return envOpcDir;
   }
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
   const localOpc = join(projectDir, "opc");
   if (existsSync(localOpc)) {
     return localOpc;
@@ -55,17 +55,21 @@ os.chdir('${opcDir}')
 ${pythonCode}
 `;
   try {
-    const result = spawnSync("uv", ["run", "python", "-c", wrappedCode, ...args], {
-      encoding: "utf-8",
-      maxBuffer: 1024 * 1024,
-      timeout: 5e3,
-      // 5 second timeout - fail gracefully if DB unreachable
-      cwd: opcDir,
-      env: {
-        ...process.env,
-        CONTINUOUS_CLAUDE_DB_URL: getPgConnectionString()
+    const result = spawnSync(
+      "uv",
+      ["run", "python", "-c", wrappedCode, ...args],
+      {
+        encoding: "utf-8",
+        maxBuffer: 1024 * 1024,
+        timeout: 5e3,
+        // 5 second timeout - fail gracefully if DB unreachable
+        cwd: opcDir,
+        env: {
+          ...process.env,
+          CONTINUOUS_CLAUDE_DB_URL: getPgConnectionString()
+        }
       }
-    });
+    );
     return {
       success: result.status === 0,
       stdout: result.stdout?.trim() || "",
@@ -220,7 +224,7 @@ function writeSessionId(sessionId) {
   }
 }
 function getProject() {
-  return process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  return process.env.CLAUDE_CC_DIR || process.cwd();
 }
 
 // src/session-register.ts
@@ -238,11 +242,15 @@ function main() {
   const projectName = project.split("/").pop() || "unknown";
   process.env.COORDINATION_SESSION_ID = sessionId;
   if (!writeSessionId(sessionId)) {
-    console.error(`[session-register] WARNING: Failed to persist session ID ${sessionId} to file`);
+    console.error(
+      `[session-register] WARNING: Failed to persist session ID ${sessionId} to file`
+    );
   }
   const registerResult = registerSession(sessionId, project, "");
   const sessionsResult = getActiveSessions(project);
-  const otherSessions = sessionsResult.sessions.filter((s) => s.id !== sessionId);
+  const otherSessions = sessionsResult.sessions.filter(
+    (s) => s.id !== sessionId
+  );
   let awarenessMessage = `
 <system-reminder>
 MULTI-SESSION COORDINATION ACTIVE

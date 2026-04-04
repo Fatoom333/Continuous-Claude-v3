@@ -10,12 +10,18 @@ async function readStdin() {
 }
 async function main() {
   const input = JSON.parse(await readStdin());
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
   if (input.reason === "other") {
     console.log(JSON.stringify({ result: "continue" }));
     return;
   }
-  const dbPath = path.join(projectDir, ".claude", "cache", "artifact-index", "context.db");
+  const dbPath = path.join(
+    projectDir,
+    ".claude",
+    "cache",
+    "artifact-index",
+    "context.db"
+  );
   const dbExists = fs.existsSync(dbPath);
   if (!dbExists) {
     console.log(JSON.stringify({ result: "continue" }));
@@ -38,7 +44,13 @@ async function main() {
     return;
   }
   const sessionName = ledgerFiles[0].replace("CONTINUITY_CLAUDE-", "").replace(".md", "");
-  const handoffDir = path.join(projectDir, "thoughts", "shared", "handoffs", sessionName);
+  const handoffDir = path.join(
+    projectDir,
+    "thoughts",
+    "shared",
+    "handoffs",
+    sessionName
+  );
   if (!fs.existsSync(handoffDir)) {
     console.log(JSON.stringify({ result: "continue" }));
     return;

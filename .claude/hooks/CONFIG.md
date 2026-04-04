@@ -16,7 +16,7 @@ Create or update `.claude/settings.json` in your project root:
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/skill-activation-prompt.sh"
+            "command": "$CLAUDE_CC_DIR/.claude/hooks/skill-activation-prompt.sh"
           }
         ]
       }
@@ -27,7 +27,7 @@ Create or update `.claude/settings.json` in your project root:
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/post-tool-use-tracker.sh"
+            "command": "$CLAUDE_CC_DIR/.claude/hooks/post-tool-use-tracker.sh"
           }
         ]
       }
@@ -37,15 +37,15 @@ Create or update `.claude/settings.json` in your project root:
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/stop-prettier-formatter.sh"
+            "command": "$CLAUDE_CC_DIR/.claude/hooks/stop-prettier-formatter.sh"
           },
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/stop-build-check-enhanced.sh"
+            "command": "$CLAUDE_CC_DIR/.claude/hooks/stop-build-check-enhanced.sh"
           },
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/error-handling-reminder.sh"
+            "command": "$CLAUDE_CC_DIR/.claude/hooks/error-handling-reminder.sh"
           }
         ]
       }
@@ -98,6 +98,7 @@ esac
 ### Build Command Detection
 
 The hooks auto-detect build commands based on:
+
 1. Presence of `package.json` with "build" script
 2. Package manager (pnpm > npm > yarn)
 3. Special cases (Prisma schemas)
@@ -117,6 +118,7 @@ fi
 ### TypeScript Configuration
 
 Hooks automatically detect:
+
 - `tsconfig.json` for standard TypeScript projects
 - `tsconfig.app.json` for Vite/React projects
 
@@ -134,6 +136,7 @@ fi
 ### Prettier Configuration
 
 The prettier hook searches for configs in this order:
+
 1. Current file directory (walking upward)
 2. Project root
 3. Falls back to Prettier defaults
@@ -155,10 +158,12 @@ fi
 Configure file category detection in `.claude/hooks/error-handling-reminder.ts`:
 
 ```typescript
-function getFileCategory(filePath: string): 'backend' | 'frontend' | 'database' | 'other' {
-    // Add custom patterns
-    if (filePath.includes('/my-custom-dir/')) return 'backend';
-    // ... existing patterns
+function getFileCategory(
+  filePath: string,
+): "backend" | "frontend" | "database" | "other" {
+  // Add custom patterns
+  if (filePath.includes("/my-custom-dir/")) return "backend";
+  // ... existing patterns
 }
 ```
 
@@ -186,7 +191,7 @@ Set in your shell profile (`.bashrc`, `.zshrc`, etc.):
 export SKIP_ERROR_REMINDER=1
 
 # Custom project directory (if not using default)
-export CLAUDE_PROJECT_DIR=/path/to/your/project
+export CLAUDE_CC_DIR=/path/to/your/project
 ```
 
 ### Per-Session Environment Variables
@@ -214,6 +219,7 @@ Stop hooks run in the order specified in `settings.json`:
 ```
 
 **Why this order matters:**
+
 1. Format files first (clean code)
 2. Then check for errors
 3. Finally show reminders
@@ -232,7 +238,7 @@ You don't need all hooks. Choose what works for your project:
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/skill-activation-prompt.sh"
+            "command": "$CLAUDE_CC_DIR/.claude/hooks/skill-activation-prompt.sh"
           }
         ]
       }
@@ -252,7 +258,7 @@ You don't need all hooks. Choose what works for your project:
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/post-tool-use-tracker.sh"
+            "command": "$CLAUDE_CC_DIR/.claude/hooks/post-tool-use-tracker.sh"
           }
         ]
       }
@@ -262,7 +268,7 @@ You don't need all hooks. Choose what works for your project:
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/stop-build-check-enhanced.sh"
+            "command": "$CLAUDE_CC_DIR/.claude/hooks/stop-build-check-enhanced.sh"
           }
         ]
       }
@@ -282,7 +288,7 @@ You don't need all hooks. Choose what works for your project:
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/post-tool-use-tracker.sh"
+            "command": "$CLAUDE_CC_DIR/.claude/hooks/post-tool-use-tracker.sh"
           }
         ]
       }
@@ -292,7 +298,7 @@ You don't need all hooks. Choose what works for your project:
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/stop-prettier-formatter.sh"
+            "command": "$CLAUDE_CC_DIR/.claude/hooks/stop-prettier-formatter.sh"
           }
         ]
       }
@@ -306,17 +312,17 @@ You don't need all hooks. Choose what works for your project:
 ### Cache Location
 
 ```
-$CLAUDE_PROJECT_DIR/.claude/tsc-cache/[session_id]/
+$CLAUDE_CC_DIR/.claude/tsc-cache/[session_id]/
 ```
 
 ### Manual Cache Cleanup
 
 ```bash
 # Remove all cached data
-rm -rf $CLAUDE_PROJECT_DIR/.claude/tsc-cache/*
+rm -rf $CLAUDE_CC_DIR/.claude/tsc-cache/*
 
 # Remove specific session
-rm -rf $CLAUDE_PROJECT_DIR/.claude/tsc-cache/[session-id]
+rm -rf $CLAUDE_CC_DIR/.claude/tsc-cache/[session-id]
 ```
 
 ### Automatic Cleanup
@@ -329,7 +335,7 @@ The build-check hook automatically cleans up session cache on successful builds.
 
 1. **Check registration:** Verify hook is in `.claude/settings.json`
 2. **Check permissions:** Run `chmod +x .claude/hooks/*.sh`
-3. **Check path:** Ensure `$CLAUDE_PROJECT_DIR` is set correctly
+3. **Check path:** Ensure `$CLAUDE_CC_DIR` is set correctly
 4. **Check TypeScript:** Run `cd .claude/hooks && npx tsc` to check for errors
 
 ### Path Resolution Issues (FIXED)
@@ -341,7 +347,8 @@ The build-check hook automatically cleans up session cache on successful builds.
 **What was changed:** The `hook_launcher.py` script now executes all hooks from the project root directory instead of the hooks directory. This ensures relative paths in hook commands resolve correctly.
 
 **If you still see path issues:**
-- Verify `$CLAUDE_PROJECT_DIR` environment variable is set correctly
+
+- Verify `$CLAUDE_CC_DIR` environment variable is set correctly
 - Check that hooks use absolute paths or paths relative to project root
 - Test hook manually: `echo '{}' | python3 .claude/hooks/hook_launcher.py <hook-name>`
 
@@ -363,6 +370,7 @@ fi
 **Issue:** Hooks are slow
 
 **Solutions:**
+
 1. Limit TypeScript checks to changed files only
 2. Use faster package managers (pnpm > npm)
 3. Add more skip conditions
@@ -406,7 +414,7 @@ You can create your own hooks for other events:
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/my-custom-bash-guard.sh"
+            "command": "$CLAUDE_CC_DIR/.claude/hooks/my-custom-bash-guard.sh"
           }
         ]
       }

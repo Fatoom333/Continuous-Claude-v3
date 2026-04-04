@@ -1,6 +1,7 @@
 ---
 name: implement-plan
 description: Implement technical plans from thoughts/shared/plans with verification
+version: 4.0
 user-invocable: false
 ---
 
@@ -8,18 +9,196 @@ user-invocable: false
 
 You are tasked with implementing an approved technical plan from `thoughts/shared/plans/`. These plans contain phases with specific changes and success criteria.
 
+## When to Use
+
+Activate when:
+
+- User says "/implement_plan" or similar
+- User provides a path to a plan file
+- After `plan-agent` or `validate-agent` has created a plan that needs implementation
+- User says "implement this plan" or "start implementing"
+
+This skill is typically invoked by other agents or after planning is complete. It is not user-invocable directly.
+
+---
+
+# Formal Specification
+
+For context-constrained scenarios, use these formal constraints:
+
+## Modal Logic Integration
+
+Five modal logics via fusion with bridge principles:
+
+- **JL**: Justification Logic - evidence-backed claims
+- **IEL**: Inferential Erotetic Logic - question handling
+- **TEL**: Temporal Epistemic Logic - phase sequencing
+- **SDL**: Standard Deontic Logic - obligations/permissions
+- **DEL**: Dynamic Epistemic Logic - action modalities
+
+### Justification Logic (JL)
+
+```
+# Justification terms
+[h]:context(task_n)                    # Handoff h justifies task context
+[v]:verified(phase_n)                  # Verification v justifies completion
+[p]:plan(tasks)                        # Plan p justifies task list
+
+# Evidence production
+[read(f)]exists e. [e]:content(f)
+[verify(c)]exists v. [v]:pass(c) | [v]:fail(c)
+
+# Handoff chain: evidence propagates
+[h_n]:complete(task_n) -> [h_{n+1}]:context(task_{n+1})
+proceed(task) <-> exists h. [h]:validated
+```
+
+### Inferential Erotetic Logic (IEL)
+
+```
+# Mode and blocker questions
+?{direct, orchestration}               # Mode selection
+?{continue, retry, ask_user}           # Blocker resolution
+mismatch(plan, reality) -> ?{how_proceed}
+no_validation -> ?{run_validation_first}
+```
+
+### Temporal Epistemic Logic (TEL)
+
+```
+# File reading constraints
+[](mentioned(f) -> <>read_fully(f))           # Eventually read
+[](mentioned(f) -> not spawn U read_fully(f)) # No spawn until read
+[](partial_read(f) -> false)                  # Partial reads forbidden
+
+# Phase sequencing
+[](phase(n) -> P(phase(n-1) & verified(n-1))) # Verified before next
+[](automated_pass -> <>manual_verify)         # Automated gates manual
+[](manual_pass(n) -> <>phase(n+1))            # Manual gates next phase
+
+# Handoff persistence
+[](handoff_created(h) -> []exists_on_disk(h)) # Survives compaction
+
+# Termination
+<>(all_complete | abandoned)
+```
+
+### Standard Deontic Logic (SDL)
+
+```
+# Reading obligations
+O(read_fully(plan))
+O(read_fully(f)) <- mentioned_in_plan(f)
+O(check_existing_checkmarks)
+F(partial_read)
+
+# Verification obligations
+O(run_automated) <- impl_complete
+O(pause_for_manual) <- automated_pass
+O(present_manual_checklist)
+F(checkoff_manual) <- not user_confirmed
+
+# Mode selection
+O(orchestration) <- tasks >= 4
+P(direct) <- tasks <= 3
+O(respect_user_preference)
+
+# Orchestration obligations
+O(read_previous_handoff) <- exists_handoff(task_{n-1})
+O(create_handoff) <- agent_completes
+O(update_ledger) <- task_complete
+F(batch_tasks)                                # One agent per task
+F(proceed_on_mismatch) <- not user_guidance
+```
+
+### Dynamic Epistemic Logic (DEL)
+
+```
+# Implementation actions
+[read(plan)]K(tasks) & K(phases) & K(criteria)
+[read(handoff_n)]K(context_{n+1})
+[spawn(agent, task)]<>result(agent)
+[verify(c)](K(pass) | K(fail))
+
+# Composed workflows
+[select_direct][implement ; verify_auto ; present_manual ; wait]*
+[select_orchestration][prepare ; spawn ; wait ; read_handoff ; update]*
+
+# Recovery
+[compaction ; read_ledger ; list_handoffs ; read_last]resume
+
+# Mismatch
+[detect_mismatch ; stop ; present ; wait]proceed_or_abort
+```
+
+### Bridge Principles
+
+```
+# Evidence persistence (JL-TEL)
+[h]:context(n) -> [][h]:context(n)
+
+# Evidence obligations (JL-SDL)
+O(exists h. [h]:validated) <- pre_implement
+O(exists v. [v]:pass(auto)) <- pre_manual
+
+# Handoff chain (full integration)
+[h_n]:complete(n) -> O([spawn]<>[h_{n+1}]:context(n+1))
+compaction -> (forall h. persists(h))
+```
+
+## State Machine
+
+```
+INIT --> READ_PLAN --> MODE_SELECT --+--> DIRECT: [IMPL -> AUTO -> MANUAL -> WAIT]*
+                                      |
+                                      +--> ORCHESTRATION: [PREP -> SPAWN -> WAIT -> HANDOFF]*
+                                                                                     |
+                                                                                     v
+                                                                                 COMPLETE
+```
+
+## Output Schema
+
+```yaml
+handoff_path: "thoughts/handoffs/<session>/task-[NN]-[desc].md"
+schema:
+  required: [status, task_desc, files_modified[], verification_results, context_for_next]
+  optional: [blocker, decisions[], open_questions[]]
+tracking:
+  plan: "- [x] Task N: description"
+  ledger: "[x] Task N"
+```
+
+## Validity Constraints
+
+```
+forall phase. has_auto_criteria(phase) & has_manual_criteria(phase)
+forall task. one_agent_per_task(task)
+forall h. on_disk(h) -> recoverable(h)
+compaction -> (forall h. persists(h))
+forall i < j. completed(task_i) before started(task_j)
+```
+
+---
+
+# Implementation Guide (Prose)
+
 ## Execution Modes
 
 You have two execution modes:
 
 ### Mode 1: Direct Implementation (Default)
+
 For small plans (3 or fewer tasks) or when user requests direct implementation.
+
 - You implement each phase yourself
 - Context accumulates in main conversation
 - Use this for quick, focused implementations
 
 ### Mode 2: Agent Orchestration (Recommended for larger plans)
+
 For plans with 4+ tasks or when context preservation is critical.
+
 - You act as a thin orchestrator
 - Agents execute each task and create handoffs
 - Compaction-resistant: handoffs persist even if context compacts
@@ -32,6 +211,7 @@ For plans with 4+ tasks or when context preservation is critical.
 ## Getting Started
 
 When given a plan path:
+
 - Read the plan completely and check for any existing checkmarks (- [x])
 - Read the original ticket and all files mentioned in the plan
 - **Read files fully** - never use limit/offset parameters, you need complete context
@@ -47,17 +227,20 @@ Before starting implementation, run a deep pre-mortem:
 ```
 
 This analyzes the plan against comprehensive checklists:
+
 - Technical risks (scalability, dependencies, data, security)
 - Integration risks (breaking changes, migration, rollback)
 - Process risks (unclear requirements, stakeholder input)
 - Testing risks (coverage gaps, load testing needs)
 
 **If HIGH severity risks are identified:**
+
 - The premortem will block via AskUserQuestion
 - User must: accept risks explicitly, add mitigations, or research solutions
 - If mitigations are added, update the plan before proceeding
 
 **Skip premortem if:**
+
 - Plan already has a "## Risks (Pre-Mortem)" section with mitigations
 - User explicitly requests to skip (`--skip-premortem`)
 
@@ -68,6 +251,7 @@ If no plan path provided, ask for one.
 ## Implementation Philosophy
 
 Plans are carefully designed, but reality can be messy. Your job is to:
+
 - Follow the plan's intent while adapting to what you find
 - Implement each phase fully before moving to the next
 - Verify your work makes sense in the broader codebase context
@@ -76,8 +260,10 @@ Plans are carefully designed, but reality can be messy. Your job is to:
 When things don't match the plan exactly, think about why and communicate clearly. The plan is your guide, but your judgment matters too.
 
 If you encounter a mismatch:
+
 - STOP and think deeply about why the plan can't be followed
 - Present the issue clearly:
+
   ```
   Issue in Phase [N]:
   Expected: [what the plan says]
@@ -90,11 +276,13 @@ If you encounter a mismatch:
 ## Verification Approach
 
 After implementing a phase:
+
 - Run the success criteria checks (usually `make check test` covers everything)
 - Fix any issues before proceeding
 - Update your progress in both the plan and your todos
 - Check off completed items in the plan file itself using Edit
 - **Pause for human verification**: After completing all automated verification for a phase, pause and inform the human that the phase is ready for manual testing. Use this format:
+
   ```
   Phase [N] Complete - Ready for Manual Verification
 
@@ -109,12 +297,12 @@ After implementing a phase:
 
 If instructed to execute multiple phases consecutively, skip the pause until the last phase. Otherwise, assume you are just doing one phase.
 
-do not check off items in the manual testing steps until confirmed by the user.
-
+Do not check off items in the manual testing steps until confirmed by the user.
 
 ## If You Get Stuck
 
 When something isn't working as expected:
+
 - First, make sure you've read and understood all the relevant code
 - Consider if the codebase has evolved since the plan was written
 - Present the mismatch clearly and ask for guidance
@@ -128,6 +316,7 @@ If the plan was created by `plan-agent`, you may be able to resume it for clarif
 1. Check `.claude/cache/agents/agent-log.jsonl` for the plan-agent entry
 2. Look for the `agentId` field
 3. To clarify or update the plan:
+
    ```
    Task(
      resume="<agentId>",
@@ -138,6 +327,7 @@ If the plan was created by `plan-agent`, you may be able to resume it for clarif
 The resumed agent retains its full prior context (research, codebase analysis).
 
 Available agents to resume:
+
 - `plan-agent` - Created the implementation plan
 - `oracle` - Researched best practices
 - `debug-agent` - Investigated issues
@@ -145,6 +335,7 @@ Available agents to resume:
 ## Resuming Work
 
 If the plan has existing checkmarks:
+
 - Trust that completed work is done
 - Pick up from the first unchecked item
 - Verify previous work only if something seems off
@@ -162,6 +353,7 @@ When implementing larger plans (4+ tasks), use agent orchestration to stay compa
 **The Problem:** During long implementations, context accumulates. If auto-compact triggers mid-task, you lose implementation context. Handoffs created at 80% context become stale.
 
 **The Solution:** Delegate implementation to agents. Each agent:
+
 - Starts with fresh context
 - Implements one task
 - Creates a handoff on completion
@@ -172,15 +364,19 @@ Handoffs persist on disk. If compaction happens, you re-read handoffs and contin
 ### Setup
 
 1. **Create handoff directory:**
+
    ```bash
    mkdir -p thoughts/handoffs/<session-name>
    ```
+
    Use the session name from your continuity ledger.
 
 2. **Read the implementation agent skill:**
+
    ```bash
-   cat .claude/skills/implement_task/SKILL.md
+   cat .claude/skills/implement-task/SKILL.md
    ```
+
    This defines how agents should behave.
 
 ### Pre-Requisite: Plan Validation
@@ -188,11 +384,13 @@ Handoffs persist on disk. If compaction happens, you re-read handoffs and contin
 Before implementing, ensure the plan has been validated using the `validate-agent`. The validation step is separate and should have created a handoff with status VALIDATED.
 
 **Check for validation handoff:**
+
 ```bash
 ls thoughts/handoffs/<session>/validation-*.md
 ```
 
 If no validation exists, suggest running validation first:
+
 ```
 "This plan hasn't been validated yet. Would you like me to spawn validate-agent first?"
 ```
@@ -210,12 +408,13 @@ For each task in the plan:
    - Identify the specific task
 
 2. **Spawn implementation agent:**
+
    ```
    Task(
      subagent_type="general-purpose",
      model="claude-opus-4-5-20251101",
      prompt="""
-     [Paste contents of .claude/skills/implement_task/SKILL.md here]
+     [Paste contents of .claude/skills/implement-task/SKILL.md here]
 
      ---
 
@@ -263,9 +462,11 @@ If auto-compact happens mid-orchestration:
 
 1. Read continuity ledger (loaded by SessionStart hook)
 2. List handoff directory:
+
    ```bash
    ls -la thoughts/handoffs/<session-name>/
    ```
+
 3. Read the last handoff to understand where you were
 4. Continue spawning agents from next uncompleted task
 
@@ -318,16 +519,16 @@ task-03-login-endpoint.md
 
 The chain preserves context even across compactions.
 
-### When to Use Agent Orchestration
+### Mode Selection Summary
 
-| Scenario | Mode |
-|----------|------|
-| 1-3 simple tasks | Direct implementation |
-| 4+ tasks | Agent orchestration |
-| Critical context to preserve | Agent orchestration |
-| Quick bug fix | Direct implementation |
-| Major feature implementation | Agent orchestration |
-| User explicitly requests | Respect user preference |
+| Scenario                     | Mode                    |
+| ---------------------------- | ----------------------- |
+| 1-3 simple tasks             | Direct implementation   |
+| 4+ tasks                     | Agent orchestration     |
+| Critical context to preserve | Agent orchestration     |
+| Quick bug fix                | Direct implementation   |
+| Major feature implementation | Agent orchestration     |
+| User explicitly requests     | Respect user preference |
 
 ### Tips
 

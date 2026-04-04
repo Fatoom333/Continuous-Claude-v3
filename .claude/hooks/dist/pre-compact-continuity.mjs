@@ -102,7 +102,9 @@ function generateAutoHandoff(summary, sessionName) {
   const timestamp = (/* @__PURE__ */ new Date()).toISOString();
   const dateOnly = timestamp.split("T")[0];
   const lines = [];
-  const inProgress = summary.lastTodos.filter((t) => t.status === "in_progress");
+  const inProgress = summary.lastTodos.filter(
+    (t) => t.status === "in_progress"
+  );
   const pending = summary.lastTodos.filter((t) => t.status === "pending");
   const completed = summary.lastTodos.filter((t) => t.status === "completed");
   const currentTask = inProgress[0]?.content || pending[0]?.content || "Continue from auto-compact";
@@ -152,13 +154,19 @@ function generateAutoHandoff(summary, sessionName) {
   lines.push('  - auto_compact: "Context limit reached, auto-compacted"');
   lines.push("");
   lines.push("findings:");
-  lines.push(`  - tool_calls: "${summary.recentToolCalls.length} recent tool calls"`);
-  lines.push(`  - files_modified: "${summary.filesModified.length} files changed"`);
+  lines.push(
+    `  - tool_calls: "${summary.recentToolCalls.length} recent tool calls"`
+  );
+  lines.push(
+    `  - files_modified: "${summary.filesModified.length} files changed"`
+  );
   lines.push("");
   lines.push("worked:");
   const successfulTools = summary.recentToolCalls.filter((t) => t.success);
   if (successfulTools.length > 0) {
-    lines.push(`  - "${successfulTools.map((t) => t.name).join(", ")} completed successfully"`);
+    lines.push(
+      `  - "${successfulTools.map((t) => t.name).join(", ")} completed successfully"`
+    );
   } else {
     lines.push("  []");
   }
@@ -166,7 +174,9 @@ function generateAutoHandoff(summary, sessionName) {
   lines.push("failed:");
   const failedTools = summary.recentToolCalls.filter((t) => !t.success);
   if (failedTools.length > 0) {
-    lines.push(`  - "${failedTools.map((t) => t.name).join(", ")} encountered errors"`);
+    lines.push(
+      `  - "${failedTools.map((t) => t.name).join(", ")} encountered errors"`
+    );
   } else {
     lines.push("  []");
   }
@@ -200,7 +210,9 @@ var isMainModule = import.meta.url === `file://${process.argv[1]}`;
 if (isMainModule) {
   const args = process.argv.slice(2);
   if (args.length === 0) {
-    console.log("Usage: npx tsx transcript-parser.ts <transcript-path> [session-name]");
+    console.log(
+      "Usage: npx tsx transcript-parser.ts <transcript-path> [session-name]"
+    );
     process.exit(1);
   }
   const transcriptPath = args[0];
@@ -216,7 +228,7 @@ if (isMainModule) {
 // src/pre-compact-continuity.ts
 async function main() {
   const input = JSON.parse(await readStdin());
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
   const ledgerDir = path.join(projectDir, "thoughts", "ledgers");
   const ledgerFiles = fs2.readdirSync(ledgerDir).filter((f) => f.startsWith("CONTINUITY_CLAUDE-") && f.endsWith(".md"));
   if (ledgerFiles.length === 0) {
@@ -239,7 +251,13 @@ async function main() {
     if (input.transcript_path && fs2.existsSync(input.transcript_path)) {
       const summary = parseTranscript(input.transcript_path);
       const handoffContent = generateAutoHandoff(summary, sessionName);
-      const handoffDir = path.join(projectDir, "thoughts", "shared", "handoffs", sessionName);
+      const handoffDir = path.join(
+        projectDir,
+        "thoughts",
+        "shared",
+        "handoffs",
+        sessionName
+      );
       fs2.mkdirSync(handoffDir, { recursive: true });
       const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-").slice(0, 19);
       handoffFile = `auto-handoff-${timestamp}.yaml`;
@@ -273,17 +291,24 @@ Ledger: ${mostRecent}`
 function generateAutoSummary(projectDir, sessionId) {
   const timestamp = (/* @__PURE__ */ new Date()).toISOString();
   const lines = [];
-  const cacheDir = path.join(projectDir, ".claude", "tsc-cache", sessionId || "default");
+  const cacheDir = path.join(
+    projectDir,
+    ".claude",
+    "tsc-cache",
+    sessionId || "default"
+  );
   const editedFilesPath = path.join(cacheDir, "edited-files.log");
   let editedFiles = [];
   if (fs2.existsSync(editedFilesPath)) {
     const content = fs2.readFileSync(editedFilesPath, "utf-8");
-    editedFiles = [...new Set(
-      content.split("\n").filter((line) => line.trim()).map((line) => {
-        const parts = line.split(":");
-        return parts[1]?.replace(projectDir + "/", "") || "";
-      }).filter((f) => f)
-    )];
+    editedFiles = [
+      ...new Set(
+        content.split("\n").filter((line) => line.trim()).map((line) => {
+          const parts = line.split(":");
+          return parts[1]?.replace(projectDir + "/", "") || "";
+        }).filter((f) => f)
+      )
+    ];
   }
   const gitClaudeDir = path.join(projectDir, ".git", "claude", "branches");
   let buildAttempts = { passed: 0, failed: 0 };
@@ -313,10 +338,14 @@ function generateAutoSummary(projectDir, sessionId) {
   lines.push(`
 ## Session Auto-Summary (${timestamp})`);
   if (editedFiles.length > 0) {
-    lines.push(`- Files changed: ${editedFiles.slice(0, 10).join(", ")}${editedFiles.length > 10 ? ` (+${editedFiles.length - 10} more)` : ""}`);
+    lines.push(
+      `- Files changed: ${editedFiles.slice(0, 10).join(", ")}${editedFiles.length > 10 ? ` (+${editedFiles.length - 10} more)` : ""}`
+    );
   }
   if (buildAttempts.passed > 0 || buildAttempts.failed > 0) {
-    lines.push(`- Build/test: ${buildAttempts.passed} passed, ${buildAttempts.failed} failed`);
+    lines.push(
+      `- Build/test: ${buildAttempts.passed} passed, ${buildAttempts.failed} failed`
+    );
   }
   return lines.join("\n");
 }
@@ -329,7 +358,10 @@ function appendToLedger(ledgerPath, summary) {
       if (nowMatch && nowMatch.index) {
         content = content.slice(0, nowMatch.index) + summary + content.slice(nowMatch.index);
       } else {
-        const nextSection = content.indexOf("\n## ", content.indexOf("## State") + 1);
+        const nextSection = content.indexOf(
+          "\n## ",
+          content.indexOf("## State") + 1
+        );
         if (nextSection > 0) {
           content = content.slice(0, nextSection) + summary + "\n" + content.slice(nextSection);
         } else {

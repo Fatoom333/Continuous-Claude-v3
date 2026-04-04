@@ -2,7 +2,11 @@
 import * as fs from "fs";
 import * as path from "path";
 import { spawn } from "child_process";
-var EXTRACTOR_LOCK = path.join(process.env.HOME || process.env.USERPROFILE || "", ".claude", "braintrust-extractor.lock");
+var EXTRACTOR_LOCK = path.join(
+  process.env.HOME || process.env.USERPROFILE || "",
+  ".claude",
+  "braintrust-extractor.lock"
+);
 var LOCK_MAX_AGE_MS = 5 * 60 * 1e3;
 function isExtractorRunning() {
   if (!fs.existsSync(EXTRACTOR_LOCK)) {
@@ -44,7 +48,7 @@ function createExtractorLock(pid) {
 }
 async function main() {
   const input = JSON.parse(await readStdin());
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
   try {
     const ledgerDir = path.join(projectDir, "thoughts", "ledgers");
     const ledgerFiles = fs.readdirSync(ledgerDir).filter((f) => f.startsWith("CONTINUITY_CLAUDE-") && f.endsWith(".md"));
@@ -57,10 +61,7 @@ async function main() {
       const ledgerPath = path.join(ledgerDir, mostRecent);
       let content = fs.readFileSync(ledgerPath, "utf-8");
       const timestamp = (/* @__PURE__ */ new Date()).toISOString();
-      content = content.replace(
-        /Updated: .*/,
-        `Updated: ${timestamp}`
-      );
+      content = content.replace(/Updated: .*/, `Updated: ${timestamp}`);
       fs.writeFileSync(ledgerPath, content);
     }
     const agentCacheDir = path.join(projectDir, ".claude", "cache", "agents");
@@ -86,8 +87,17 @@ async function main() {
       console.log(JSON.stringify({ result: "continue" }));
       return;
     }
-    const learnScript = path.join(projectDir, "scripts", "braintrust_analyze.py");
-    const globalScript = path.join(process.env.HOME || process.env.USERPROFILE || "", ".claude", "scripts", "braintrust_analyze.py");
+    const learnScript = path.join(
+      projectDir,
+      "scripts",
+      "braintrust_analyze.py"
+    );
+    const globalScript = path.join(
+      process.env.HOME || process.env.USERPROFILE || "",
+      ".claude",
+      "scripts",
+      "braintrust_analyze.py"
+    );
     const scriptPath = fs.existsSync(learnScript) ? learnScript : globalScript;
     if (fs.existsSync(scriptPath)) {
       if (isExtractorRunning()) {
@@ -95,7 +105,27 @@ async function main() {
         return;
       }
       const isGlobalScript = scriptPath === globalScript;
-      const args = isGlobalScript ? ["run", "--with", "braintrust", "--with", "openai", "--with", "aiohttp", "python", scriptPath, "--learn", "--session-id", input.session_id] : ["run", "python", scriptPath, "--learn", "--session-id", input.session_id];
+      const args = isGlobalScript ? [
+        "run",
+        "--with",
+        "braintrust",
+        "--with",
+        "openai",
+        "--with",
+        "aiohttp",
+        "python",
+        scriptPath,
+        "--learn",
+        "--session-id",
+        input.session_id
+      ] : [
+        "run",
+        "python",
+        scriptPath,
+        "--learn",
+        "--session-id",
+        input.session_id
+      ];
       const child = spawn("uv", args, {
         cwd: projectDir,
         detached: true,

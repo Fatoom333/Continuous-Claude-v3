@@ -31,7 +31,7 @@ Python hooks should include PEP 723 inline script metadata for portability:
     # dependencies = ["httpx"]  # list any required packages
     # ///
 
-Supports both project-specific hooks ($CLAUDE_PROJECT_DIR/.claude/hooks)
+Supports both project-specific hooks ($CLAUDE_CC_DIR/.claude/hooks)
 and user-level hooks (~/.claude/hooks), with project hooks taking precedence.
 """
 
@@ -107,8 +107,8 @@ def get_hooks_dirs() -> list[Path]:
     """
     dirs = []
 
-    # Project-specific hooks (from CLAUDE_PROJECT_DIR env var)
-    project_dir = os.environ.get("CLAUDE_PROJECT_DIR")
+    # Project-specific hooks (from CLAUDE_CC_DIR env var)
+    project_dir = os.environ.get("CLAUDE_CC_DIR")
     if project_dir:
         dirs.append(Path(project_dir) / ".claude" / "hooks")
 
@@ -235,8 +235,8 @@ def find_hook_script(name: str) -> tuple[Path | None, Path | None, Path | None]:
             # Project hooks: extract from hooks_dir path
             # hooks_dir is like: /path/to/project/.claude/hooks
             # project_root should be: /path/to/project
-            # Try resolving via CLAUDE_PROJECT_DIR first
-            env_project_dir = os.environ.get("CLAUDE_PROJECT_DIR")
+            # Try resolving via CLAUDE_CC_DIR first
+            env_project_dir = os.environ.get("CLAUDE_CC_DIR")
             if env_project_dir:
                 project_root = Path(env_project_dir)
             else:

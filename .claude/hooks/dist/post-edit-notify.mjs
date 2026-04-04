@@ -60,6 +60,20 @@ function releaseLock(projectDir) {
   }
 }
 var QUERY_TIMEOUT = 3e3;
+var daemonStatusCache = /* @__PURE__ */ new Map();
+var CACHE_TTL_MS = 6e4;
+function getCachedDaemonStatus(projectDir) {
+  const cached = daemonStatusCache.get(resolveProjectDir(projectDir));
+  if (!cached) return null;
+  if (Date.now() - cached.timestamp >= CACHE_TTL_MS) return null;
+  return cached.running;
+}
+function cacheDaemonStatus(projectDir, running) {
+  daemonStatusCache.set(resolveProjectDir(projectDir), {
+    running,
+    timestamp: Date.now()
+  });
+}
 function getConnectionInfo(projectDir) {
   const resolvedPath = resolveProjectDir(projectDir);
   const hash = crypto.createHash("md5").update(resolvedPath).digest("hex").substring(0, 8);
@@ -141,33 +155,46 @@ function isDaemonReachable(projectDir) {
 }
 function tryStartDaemon(projectDir) {
   try {
+    const cachedStatus = getCachedDaemonStatus(projectDir);
+    if (cachedStatus === true) {
+      return true;
+    }
     if (isDaemonProcessRunning(projectDir)) {
+      cacheDaemonStatus(projectDir, true);
       return true;
     }
     if (isDaemonReachable(projectDir)) {
+      cacheDaemonStatus(projectDir, true);
       return true;
     }
     if (!tryAcquireLock(projectDir)) {
       const start = Date.now();
       while (Date.now() - start < 5e3) {
         if (isDaemonProcessRunning(projectDir) || isDaemonReachable(projectDir)) {
+          cacheDaemonStatus(projectDir, true);
           return true;
         }
         const end = Date.now() + 100;
         while (Date.now() < end) {
         }
       }
-      return isDaemonProcessRunning(projectDir) || isDaemonReachable(projectDir);
+      const running = isDaemonProcessRunning(projectDir) || isDaemonReachable(projectDir);
+      if (running) cacheDaemonStatus(projectDir, true);
+      return running;
     }
     try {
       const tldrPath = join(projectDir, "opc", "packages", "tldr-code");
       let started = false;
       if (existsSync(tldrPath)) {
-        const result = spawnSync("uv", ["run", "tldr", "daemon", "start", "--project", projectDir], {
-          timeout: 1e4,
-          stdio: "ignore",
-          cwd: tldrPath
-        });
+        const result = spawnSync(
+          "uv",
+          ["run", "tldr", "daemon", "start", "--project", projectDir],
+          {
+            timeout: 1e4,
+            stdio: "ignore",
+            cwd: tldrPath
+          }
+        );
         started = result.status === 0;
       }
       if (!started && !process.env.TLDR_DEV) {
@@ -182,13 +209,16 @@ function tryStartDaemon(projectDir) {
           const cooldown = Date.now() + 1e3;
           while (Date.now() < cooldown) {
           }
+          cacheDaemonStatus(projectDir, true);
           return true;
         }
         const end = Date.now() + 100;
         while (Date.now() < end) {
         }
       }
-      return isDaemonReachable(projectDir);
+      const reachable = isDaemonReachable(projectDir);
+      if (reachable) cacheDaemonStatus(projectDir, true);
+      return reachable;
     } finally {
       releaseLock(projectDir);
     }
@@ -207,7 +237,10 @@ function queryDaemonSync(query, projectDir) {
   const connInfo = getConnectionInfo(projectDir);
   if (!isDaemonReachable(projectDir)) {
     if (!tryStartDaemon(projectDir)) {
-      return { status: "unavailable", error: "Daemon not running and could not start" };
+      return {
+        status: "unavailable",
+        error: "Daemon not running and could not start"
+      };
     }
   }
   try {
@@ -225,10 +258,13 @@ function queryDaemonSync(query, projectDir) {
         $client.Close()
         Write-Output $response
       `.trim();
-      result = execSync(`powershell -Command "${psCommand.replace(/"/g, '\\"')}"`, {
-        encoding: "utf-8",
-        timeout: QUERY_TIMEOUT
-      });
+      result = execSync(
+        `powershell -Command "${psCommand.replace(/"/g, '\\"')}"`,
+        {
+          encoding: "utf-8",
+          timeout: QUERY_TIMEOUT
+        }
+      );
     } else {
       result = execSync(`echo '${input}' | nc -U "${connInfo.path}"`, {
         encoding: "utf-8",
@@ -269,7 +305,7 @@ async function main() {
     return;
   }
   try {
-    const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+    const projectDir = process.env.CLAUDE_CC_DIR || process.cwd();
     const response = queryDaemonSync(
       { cmd: "notify", file: filePath },
       projectDir

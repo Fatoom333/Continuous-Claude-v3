@@ -9,7 +9,7 @@ var GOEDEL_ENABLED = process.env.GOEDEL_ENABLED !== "false";
 var lmStudioAvailable = null;
 var lmStudioCheckedAt = 0;
 var AVAILABILITY_CACHE_MS = 6e4;
-var STATE_DIR = process.env.CLAUDE_PROJECT_DIR ? join(process.env.CLAUDE_PROJECT_DIR, ".claude", "cache", "lean") : join(tmpdir(), "claude-lean");
+var STATE_DIR = process.env.CLAUDE_CC_DIR ? join(process.env.CLAUDE_CC_DIR, ".claude", "cache", "lean") : join(tmpdir(), "claude-lean");
 var STATE_FILE = join(STATE_DIR, "compiler-state.json");
 function readStdin() {
   return readFileSync(0, "utf-8");
@@ -99,7 +99,10 @@ async function getGoedelSuggestions(leanCode, errors, sorries) {
   }
   const isAvailable = await checkLMStudioAvailable();
   if (!isAvailable) {
-    return { suggestion: null, unavailableMessage: getLMStudioUnavailableMessage() };
+    return {
+      suggestion: null,
+      unavailableMessage: getLMStudioUnavailableMessage()
+    };
   }
   try {
     const prompt = buildGoedelPrompt(leanCode, errors, sorries);
@@ -188,7 +191,10 @@ async function main() {
     timestamp: Date.now()
   };
   saveState(state);
-  let goedelResult = { suggestion: null, unavailableMessage: null };
+  let goedelResult = {
+    suggestion: null,
+    unavailableMessage: null
+  };
   if (!result.success || sorries.length > 0) {
     const leanCode = existsSync(filePath) ? readFileSync(filePath, "utf-8") : "";
     goedelResult = await getGoedelSuggestions(leanCode, result.output, sorries);
@@ -204,38 +210,44 @@ ${goedelResult.suggestion}
     goedelBlock = goedelResult.unavailableMessage;
   }
   if (!result.success) {
-    console.log(JSON.stringify({
-      hookSpecificOutput: {
-        hookEventName: "PostToolUse",
-        additionalContext: `
+    console.log(
+      JSON.stringify({
+        hookSpecificOutput: {
+          hookEventName: "PostToolUse",
+          additionalContext: `
 \u26A0\uFE0F LEAN COMPILER ERRORS:
 
 ${result.output}
 ${goedelBlock}
 APOLLO Pattern: Use 'sorry' to mark failing sub-lemmas, then fix each one.
 `
-      }
-    }));
+        }
+      })
+    );
   } else if (sorries.length > 0) {
-    console.log(JSON.stringify({
-      hookSpecificOutput: {
-        hookEventName: "PostToolUse",
-        additionalContext: `
+    console.log(
+      JSON.stringify({
+        hookSpecificOutput: {
+          hookEventName: "PostToolUse",
+          additionalContext: `
 \u26A0\uFE0F LEAN PROOF INCOMPLETE - ${sorries.length} sorry placeholder(s):
 
 ${sorries.join("\n")}
 ${goedelBlock}
 Fix each 'sorry' with a valid proof term or tactic.
 `
-      }
-    }));
+        }
+      })
+    );
   } else {
-    console.log(JSON.stringify({
-      hookSpecificOutput: {
-        hookEventName: "PostToolUse",
-        additionalContext: "\u2713 Lean proof compiles successfully with no sorries!"
-      }
-    }));
+    console.log(
+      JSON.stringify({
+        hookSpecificOutput: {
+          hookEventName: "PostToolUse",
+          additionalContext: "\u2713 Lean proof compiles successfully with no sorries!"
+        }
+      })
+    );
   }
 }
 main().catch((err) => {

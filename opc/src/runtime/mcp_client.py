@@ -11,8 +11,11 @@ import asyncio
 import json
 import logging
 import os
+import random
 import re
 import sys
+import time
+from dataclasses import dataclass
 from enum import Enum
 from functools import lru_cache
 from pathlib import Path
@@ -22,11 +25,18 @@ import aiofiles
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.sse import sse_client
 from mcp.client.stdio import stdio_client
-from mcp.client.streamable_http import streamablehttp_client
+from mcp.client.streamablehttp import streamablehttp_client
 from mcp.types import Tool
 
+from .circuit_breaker import (
+    CircuitBreaker,
+    CircuitBreakerConfig,
+    CircuitBreakerManager,
+    get_circuit_breaker_manager,
+)
 from .config import McpConfig, ServerConfig
 from .exceptions import (
+    CircuitOpenError,
     ConfigurationError,
     ServerConnectionError,
     ToolExecutionError,
@@ -37,8 +47,126 @@ logger = logging.getLogger("mcp_execution.client")
 
 
 # ===========================================================================
+# Retry Configuration - Exponential backoff with jitter
+# ===========================================================================
+
+
+@dataclass
+class RetryConfig:
+    """Configuration for exponential backoff retry logic.
+
+    Attributes:
+        max_retries: Maximum number of retry attempts (default: 3)
+        initial_delay: Initial delay in seconds (default: 0.5)
+        max_delay: Maximum delay cap in seconds (default: 30.0)
+        backoff_factor: Multiplier for each retry (default: 2.0)
+        jitter: Whether to add random jitter (default: True)
+    """
+
+    max_retries: int = 3
+    initial_delay: float = 0.5
+    max_delay: float = 30.0
+    backoff_factor: float = 2.0
+    jitter: bool = True
+
+
+# Default retry configuration
+DEFAULT_RETRY_CONFIG = RetryConfig()
+
+# Error patterns that indicate retryable vs non-retryable errors
+RETRYABLE_PATTERNS = [
+    "connection reset",
+    "connection refused",
+    "connection timeout",
+    "timed out",
+    "timeout",
+    "temporary failure",
+    "resource temporarily unavailable",
+    "rate limit",
+    "too many requests",
+    "service unavailable",
+    "bad gateway",
+    "gateway timeout",
+    "internal server error",
+    "server error",
+]
+
+NON_RETRYABLE_PATTERNS = [
+    "not found",
+    "invalid parameter",
+    "invalid argument",
+    "unauthorized",
+    "forbidden",
+    "access denied",
+    "permission denied",
+    "authentication failed",
+    "invalid api key",
+    "tool not found",
+    "unsupported operation",
+]
+
+
+def classify_error(error: Exception) -> str:
+    """Classify an error as retryable, non-retryable, or unknown.
+
+    Args:
+        error: The exception to classify
+
+    Returns:
+        "retryable", "non_retryable", or "unknown"
+    """
+    error_str = str(error).lower()
+    error_type = type(error).__name__.lower()
+
+    # Check non-retryable patterns first (more specific)
+    for pattern in NON_RETRYABLE_PATTERNS:
+        if pattern in error_str or pattern in error_type:
+            return "non_retryable"
+
+    # Check retryable patterns
+    for pattern in RETRYABLE_PATTERNS:
+        if pattern in error_str or pattern in error_type:
+            return "retryable"
+
+    # Connection-related exceptions are generally retryable
+    if "connection" in error_type or "timeout" in error_type:
+        return "retryable"
+
+    # OSError subclasses (network issues) are retryable
+    if isinstance(
+        error,
+        (ConnectionError, ConnectionRefusedError, ConnectionResetError, TimeoutError, OSError),
+    ):
+        return "retryable"
+
+    return "unknown"
+
+
+def calculate_backoff_delay(attempt: int, config: RetryConfig) -> float:
+    """Calculate delay with exponential backoff and optional jitter.
+
+    Args:
+        attempt: Current attempt number (0-indexed)
+        config: Retry configuration
+
+    Returns:
+        Delay in seconds
+    """
+    delay = config.initial_delay * (config.backoff_factor**attempt)
+    delay = min(delay, config.max_delay)
+
+    if config.jitter:
+        # Add up to 25% jitter
+        jitter_amount = delay * 0.25
+        delay = delay + random.uniform(-jitter_amount, jitter_amount)
+
+    return max(0.1, delay)  # Minimum 100ms
+
+
+# ===========================================================================
 # Project Root Detection - Handles cwd being a subdirectory
 # ===========================================================================
+
 
 def find_project_root(start_dir: Path) -> Path:
     """Find project root by looking for .git directory.
@@ -63,6 +191,7 @@ def find_project_root(start_dir: Path) -> Path:
 # ===========================================================================
 # Result Unwrapping Dispatch - Reduces complexity in call_tool
 # ===========================================================================
+
 
 def _unwrap_result(result: Any) -> Any:
     """Unwrap MCP call result using strategy dispatch.
@@ -151,6 +280,7 @@ RESULT_UNWRAP_STRATEGIES = [
 # Config Loading Helpers - Reduces complexity in initialize
 # ===========================================================================
 
+
 async def _load_config_from_path(config_path: str) -> McpConfig:
     """Load MCP config from explicit path.
 
@@ -164,6 +294,7 @@ async def _load_config_from_path(config_path: str) -> McpConfig:
         ConfigurationError: If load fails
     """
     from pathlib import Path
+
     path = Path(config_path)
     if not path.exists():
         raise ConfigurationError(f"Config file not found: {config_path}")
@@ -250,6 +381,7 @@ class McpClientManager:
         _session_contexts: Session context managers for proper lifecycle management
         _read_streams: Active stdio read streams
         _write_streams: Active stdio write streams
+        _circuit_breakers: Circuit breaker manager for resilient server calls
     """
 
     def __init__(self) -> None:
@@ -262,6 +394,7 @@ class McpClientManager:
         self._session_contexts: dict[str, Any] = {}  # Store session context managers
         self._read_streams: dict[str, Any] = {}
         self._write_streams: dict[str, Any] = {}
+        self._circuit_breakers: CircuitBreakerManager = get_circuit_breaker_manager()
 
     def _validate_state(self, required_state: ConnectionState, operation: str) -> None:
         """Validate that the manager is in the required state for an operation.
@@ -596,20 +729,25 @@ class McpClientManager:
             raise ServerConnectionError(f"Could not list tools from server '{server_name}': {e}")
 
     async def call_tool(
-        self, tool_identifier: str, params: dict[str, Any], max_retries: int = 1
+        self,
+        tool_identifier: str,
+        params: dict[str, Any],
+        max_retries: int | None = None,
+        retry_config: RetryConfig | None = None,
     ) -> Any:
-        """Call an MCP tool with lazy server connection and automatic retry.
+        """Call an MCP tool with lazy server connection and exponential backoff retry.
 
         This is the core method that implements lazy loading. Servers are only
         connected when their tools are first invoked. On failure, automatically
-        retries up to max_retries times before raising an error.
+        retries with exponential backoff before raising an error.
 
         Tool Identifier Format: "serverName__toolName"
 
         Args:
             tool_identifier: Tool identifier in format "serverName__toolName"
             params: Dictionary of parameters to pass to the tool
-            max_retries: Maximum number of retry attempts on failure (default: 1)
+            max_retries: (Deprecated) Use retry_config instead. Maximum number of retry attempts.
+            retry_config: Optional RetryConfig for custom retry behavior. Uses DEFAULT_RETRY_CONFIG if not provided.
 
         Returns:
             The tool execution result (unwrapped from response)
@@ -625,6 +763,13 @@ class McpClientManager:
         if not self._config:
             raise ConfigurationError("Configuration not loaded")
 
+        # Handle deprecated max_retries parameter
+        if max_retries is not None and retry_config is None:
+            retry_config = RetryConfig(max_retries=max_retries)
+            logger.warning("max_retries is deprecated, use retry_config parameter instead")
+        elif retry_config is None:
+            retry_config = DEFAULT_RETRY_CONFIG
+
         # Parse tool identifier
         if "__" not in tool_identifier:
             raise ToolNotFoundError(
@@ -633,6 +778,18 @@ class McpClientManager:
             )
 
         server_name, tool_name = tool_identifier.split("__", 1)
+
+        # Get circuit breaker for this server
+        circuit_breaker = self._circuit_breakers.get_breaker(server_name)
+
+        # Check if circuit is open (server is failing)
+        if not circuit_breaker.should_allow():
+            stats = circuit_breaker.stats
+            logger.warning(
+                f"Circuit breaker OPEN for server '{server_name}': "
+                f"{stats.failed_calls} failures, last error: {stats.last_failure_message}"
+            )
+            raise CircuitOpenError(server_name, stats)
 
         # Get server configuration
         server_config = self._config.get_server(server_name)
@@ -660,16 +817,18 @@ class McpClientManager:
                 f"Available tools: {tool_names}"
             )
 
-        # Execute the tool with retry logic
+        # Execute the tool with exponential backoff retry logic
         last_error: Exception | None = None
 
-        for attempt in range(max_retries + 1):
+        for attempt in range(retry_config.max_retries + 1):
             try:
                 client = self._clients[server_name]
-                logger.info(
-                    f"Executing tool: {tool_identifier}"
-                    + (f" (attempt {attempt + 1})" if attempt > 0 else "")
+                log_suffix = (
+                    f" (attempt {attempt + 1}/{retry_config.max_retries + 1})"
+                    if attempt > 0
+                    else ""
                 )
+                logger.info(f"Executing tool: {tool_identifier}{log_suffix}")
                 logger.debug(f"Tool parameters: {params}")
 
                 result = await client.call_tool(tool_name, params)
@@ -677,29 +836,53 @@ class McpClientManager:
                 # Use dispatch-based unwrapping for reduced complexity
                 unwrapped = _unwrap_mcp_response(result)
 
+                # Record success for circuit breaker
+                circuit_breaker.record_success()
+
                 logger.debug(f"Tool execution result: {unwrapped}")
                 return unwrapped
 
             except Exception as e:
                 last_error = e
-                if attempt < max_retries:
+                error_classification = classify_error(e)
+
+                # Record failure for circuit breaker
+                circuit_breaker.record_failure(e)
+
+                # Don't retry non-retryable errors
+                if error_classification == "non_retryable":
+                    logger.error(f"Non-retryable error for '{tool_identifier}': {e}")
+                    raise ToolExecutionError(
+                        f"Tool execution failed for '{tool_identifier}' (non-retryable): {e}"
+                    ) from e
+
+                if attempt < retry_config.max_retries:
+                    delay = calculate_backoff_delay(attempt, retry_config)
+                    error_type = type(e).__name__
+
                     print(
-                        f"⚠️  MCP call failed (attempt {attempt + 1}/{max_retries + 1}), retrying in 1s...",
+                        f"⚠️  MCP call failed (attempt {attempt + 1}/{retry_config.max_retries + 1}), "
+                        f"retrying in {delay:.2f}s... [{error_type}: {e}]",
                         file=sys.stderr,
                     )
                     logger.warning(
-                        f"Tool execution attempt {attempt + 1} failed for '{tool_identifier}': {e}"
+                        f"Tool execution attempt {attempt + 1} failed for '{tool_identifier}' "
+                        f"(classified as {error_classification}): {e}. Retrying in {delay:.2f}s"
                     )
-                    await asyncio.sleep(1)  # Brief delay before retry
+                    await asyncio.sleep(delay)
                 else:
                     logger.error(
-                        f"Tool execution failed after {max_retries + 1} attempts for '{tool_identifier}': {e}"
+                        f"Tool execution failed after {retry_config.max_retries + 1} attempts "
+                        f"for '{tool_identifier}': {e}"
                     )
 
         # All retries exhausted
-        print(f"❌ MCP call failed after {max_retries + 1} attempts: {last_error}", file=sys.stderr)
+        print(
+            f"❌ MCP call failed after {retry_config.max_retries + 1} attempts: {last_error}",
+            file=sys.stderr,
+        )
         raise ToolExecutionError(
-            f"Failed to execute tool '{tool_identifier}' after {max_retries + 1} attempts: {last_error}"
+            f"Failed to execute tool '{tool_identifier}' after {retry_config.max_retries + 1} attempts: {last_error}"
         )
 
     async def list_all_tools(self) -> list[Tool]:
@@ -819,16 +1002,22 @@ def get_mcp_client_manager() -> McpClientManager:
     return McpClientManager()
 
 
-async def call_mcp_tool(tool_identifier: str, params: dict[str, Any], max_retries: int = 1) -> Any:
+async def call_mcp_tool(
+    tool_identifier: str,
+    params: dict[str, Any],
+    max_retries: int | None = None,
+    retry_config: RetryConfig | None = None,
+) -> Any:
     """Convenience function for calling MCP tools using the singleton manager.
 
     This is a high-level API that automatically uses the singleton manager instance.
-    On failure, automatically retries once before raising an error.
+    On failure, automatically retries with exponential backoff before raising an error.
 
     Args:
         tool_identifier: Tool identifier in format "serverName__toolName"
         params: Dictionary of parameters to pass to the tool
-        max_retries: Maximum number of retry attempts on failure (default: 1)
+        max_retries: (Deprecated) Use retry_config instead. Maximum number of retry attempts.
+        retry_config: Optional RetryConfig for custom retry behavior. Uses DEFAULT_RETRY_CONFIG if not provided.
 
     Returns:
         The tool execution result
@@ -840,4 +1029,6 @@ async def call_mcp_tool(tool_identifier: str, params: dict[str, Any], max_retrie
         ServerConnectionError: If unable to connect to server
     """
     manager = get_mcp_client_manager()
-    return await manager.call_tool(tool_identifier, params, max_retries=max_retries)
+    return await manager.call_tool(
+        tool_identifier, params, max_retries=max_retries, retry_config=retry_config
+    )
