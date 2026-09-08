@@ -59,9 +59,9 @@ uv run python "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" <command> <args
 | `integrate` | Definite/indefinite integral | `integrate "sin(x)" --var x --lower 0 --upper pi` |
 | `diff`      | Derivative                   | `diff "x**3" --var x`                             |
 | `simplify`  | Simplify expression          | `simplify "sin(x)**2 + cos(x)**2"`                |
-| `limit`     | Compute limit                | `limit "sin(x)/x" --var x --point 0`              |
-| `series`    | Taylor expansion             | `series "exp(x)" --var x --point 0 --n 5`         |
-| `dsolve`    | Solve ODE                    | `dsolve "f''(x) + f(x)" --func f --var x`         |
+| `limit`     | Compute limit                | `limit "sin(x)/x" --var x --to 0`                 |
+| `series`    | Taylor expansion             | `series "exp(x)" --var x --point 0 --order 5`     |
+| `dsolve`    | Solve ODE                    | `dsolve "f(x).diff(x,2) + f(x)" --func "f(x)"`    |
 | `laplace`   | Laplace transform            | `laplace "sin(t)" --var t`                        |
 
 **Matrix Operations:**
