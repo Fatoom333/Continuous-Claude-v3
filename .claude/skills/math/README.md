@@ -29,11 +29,11 @@ A multi-layer system for machine-verified mathematical problem solving.
 
 ```bash
 # Symbolic computation
-uv run python scripts/sympy_compute.py solve "x**2 - 4 = 0"
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" solve "x**2 - 4 = 0"
 
 # Matrix operations
-uv run python scripts/sympy_compute.py eigenvalues "[[1,2],[3,4]]"
-uv run python scripts/sympy_compute.py eigenvectors "[[2,0],[0,3]]"
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" eigenvalues "[[1,2],[3,4]]"
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" eigenvectors "[[2,0],[0,3]]"
 
 # Formal verification (Lean 4)
 lake build  # Compiler-in-the-loop
@@ -54,11 +54,8 @@ lake build  # Compiler-in-the-loop
 │   ├── real-analysis/       # Limits, continuity, convergence
 │   ├── topology/            # Open sets, compactness
 │   └── ...
-├── lean4/                   # Base Lean 4 setup
-├── lean4-functors/          # Functor syntax
-├── lean4-nat-trans/         # Natural transformations
-├── lean4-limits/            # Products, coproducts
-└── math-mode/               # SymPy + Z3 integration
+├── math-unified/            # Entry point: SymPy + Z3 + Pint routing
+└── prove/                   # Lean 4 formal proofs
 ```
 
 ## Domain Skills
@@ -74,11 +71,11 @@ Each domain skill contains:
 Agents can query past reasoning:
 
 - Handoffs: `thoughts/shared/handoffs/`
-- Braintrust: `uv run python scripts/braintrust_analyze.py --session-id <id>`
+- Braintrust: `uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/braintrust_analyze.py" --session-id <id>`
 
 ## Related Skills
 
-- `/math-mode` - SymPy + Z3 cognitive prosthetics
-- `/lean4` - Formal theorem proving with APOLLO repair
+- `/math-unified` - SymPy + Z3 cognitive prosthetics
+- `/prove` - Formal theorem proving with Lean 4
 
 See `WORKFLOW.md` for the full development workflow.

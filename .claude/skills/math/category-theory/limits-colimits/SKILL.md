@@ -42,7 +42,7 @@ Use this skill when working on limits-colimits problems in category theory.
    - Left adjoint preserves colimits
    - Representable functors preserve limits
    - Lean 4: `Adjunction.rightAdjointPreservesLimits`
-   - See: `.claude/skills/lean4-limits/SKILL.md` for exact syntax
+   - Use the `prove` skill (Lean 4 + Mathlib) for exact syntax
 
 ## Tool Commands
 
@@ -61,7 +61,7 @@ Use this skill when working on limits-colimits problems in category theory.
 ### Sympy_Pullback
 
 ```bash
-uv run python -m runtime.harness scripts/sympy_compute.py solve "f(a) == g(b)"
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" solve "f(a) == g(b)"
 ```
 
 ### Lean4_Build
@@ -72,4 +72,4 @@ lake build  # Compiler-in-the-loop verification
 
 ## Cognitive Tools Reference
 
-See `.claude/skills/math-mode/SKILL.md` for full tool documentation.
+See the `math-unified` skill for the full command list, or run `uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/<script>.py" --help`.

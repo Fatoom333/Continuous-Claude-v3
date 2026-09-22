@@ -18,7 +18,7 @@ Use this skill when working on limits problems in real analysis.
 
 2. **Indeterminate Form? (0/0, inf/inf)**
    - Try algebraic manipulation (factor, rationalize)
-   - Try L'Hopital's rule: `sympy_compute.py diff` on numerator/denominator
+   - Try L'Hopital's rule: `sympy_compute.py diff "<numerator>" --var x` and the same for the denominator
 
 3. **Squeeze Theorem**
    - If bounded: find g(x) <= f(x) <= h(x) where lim g = lim h
@@ -34,21 +34,22 @@ Use this skill when working on limits problems in real analysis.
 ### Sympy_Limit
 
 ```bash
-uv run python -m runtime.harness scripts/sympy_compute.py limit "sin(x)/x" --var x --at 0
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" limit "sin(x)/x" --var x --to 0
 ```
 
 ### Sympy_Diff
 
 ```bash
-uv run python -m runtime.harness scripts/sympy_compute.py diff "x**2" --var x
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" diff "x**2" --var x
 ```
 
-### Z3_Prove
+### Z3_Squeeze_Bound
 
 ```bash
-uv run python -m runtime.harness scripts/z3_solve.py prove "limit_bound" --vars x
+# -x^2 <= x^2 sin(1/x) <= x^2 with s = sin(1/x) in [-1, 1], so the limit at 0 is 0
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/z3_solve.py" prove "-x*x <= x*x*s <= x*x" --assume "-1 <= s <= 1" --type real
 ```
 
 ## Cognitive Tools Reference
 
-See `.claude/skills/math-mode/SKILL.md` for full tool documentation.
+See the `math-unified` skill for the full command list, or run `uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/<script>.py" --help`.

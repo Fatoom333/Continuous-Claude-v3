@@ -1,25 +1,31 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#     "pint",
+# ]
+# ///
 """Unit conversion computation script - Cognitive prosthetics for Claude.
 
 USAGE:
     # Parse a quantity
-    uv run python -m runtime.harness scripts/pint_compute.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/pint_compute.py" \
         parse "100 km/h"
 
     # Convert between units
-    uv run python -m runtime.harness scripts/pint_compute.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/pint_compute.py" \
         convert "5 meters" --to feet
 
     # Unit-aware calculation
-    uv run python -m runtime.harness scripts/pint_compute.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/pint_compute.py" \
         calc "5 m * 3 s"
 
     # Check dimensional compatibility
-    uv run python -m runtime.harness scripts/pint_compute.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/pint_compute.py" \
         check newton --against "kg * m / s^2"
 
     # Simplify compound units
-    uv run python -m runtime.harness scripts/pint_compute.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/pint_compute.py" \
         simplify "1 kg*m/s^2"
 
 Requires: pint (pip install pint)
@@ -525,4 +531,6 @@ async def main():
 
 
 if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
     asyncio.run(main())

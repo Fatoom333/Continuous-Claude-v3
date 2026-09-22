@@ -1,50 +1,56 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#     "shapely",
+# ]
+# ///
 """Computational geometry script - Cognitive prosthetics for Claude.
 
 USAGE:
     # Create geometries
-    uv run python -m runtime.harness scripts/shapely_compute.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/shapely_compute.py" \
         create point --coords "1,2"
 
-    uv run python -m runtime.harness scripts/shapely_compute.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/shapely_compute.py" \
         create line --coords "0,0 1,1 2,0"
 
-    uv run python -m runtime.harness scripts/shapely_compute.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/shapely_compute.py" \
         create polygon --coords "0,0 1,0 1,1 0,1"
 
     # Geometric operations
-    uv run python -m runtime.harness scripts/shapely_compute.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/shapely_compute.py" \
         op intersection --g1 "POLYGON ((0 0, 2 0, 2 2, 0 2, 0 0))" \
                         --g2 "POLYGON ((1 1, 3 1, 3 3, 1 3, 1 1))"
 
-    uv run python -m runtime.harness scripts/shapely_compute.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/shapely_compute.py" \
         op buffer --g1 "POINT (0 0)" --g2 "1.5"
 
     # Predicates
-    uv run python -m runtime.harness scripts/shapely_compute.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/shapely_compute.py" \
         pred contains --g1 "POLYGON ((0 0, 2 0, 2 2, 0 2, 0 0))" \
                       --g2 "POINT (1 1)"
 
     # Measurements
-    uv run python -m runtime.harness scripts/shapely_compute.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/shapely_compute.py" \
         measure area --geom "POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))"
 
-    uv run python -m runtime.harness scripts/shapely_compute.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/shapely_compute.py" \
         measure centroid --geom "POLYGON ((0 0, 2 0, 2 2, 0 2, 0 0))"
 
     # Transformations
-    uv run python -m runtime.harness scripts/shapely_compute.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/shapely_compute.py" \
         transform translate --geom "POINT (0 0)" --params "1,2"
 
-    uv run python -m runtime.harness scripts/shapely_compute.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/shapely_compute.py" \
         transform rotate --geom "POINT (1 0)" --params "90"
 
     # Validation
-    uv run python -m runtime.harness scripts/shapely_compute.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/shapely_compute.py" \
         validate --geom "POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))"
 
     # Distance
-    uv run python -m runtime.harness scripts/shapely_compute.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/shapely_compute.py" \
         distance --g1 "POINT (0 0)" --g2 "POINT (3 4)"
 
 Requires: shapely (pip install shapely)
@@ -827,4 +833,6 @@ async def main():
 
 
 if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
     asyncio.run(main())

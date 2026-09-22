@@ -1,49 +1,55 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#     "sympy>=1.14",
+# ]
+# ///
 """Symbolic math computation script - Cognitive prosthetics for Claude.
 
 USAGE:
     # Solve equations
-    uv run python -m runtime.harness scripts/sympy_compute.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" \
         solve "x**2 - 4 = 0" --var x --domain real
 
     # Integrate
-    uv run python -m runtime.harness scripts/sympy_compute.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" \
         integrate "sin(x)" --var x
 
     # Definite integral
-    uv run python -m runtime.harness scripts/sympy_compute.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" \
         integrate "x" --var x --bounds 0 1
 
     # Differentiate
-    uv run python -m runtime.harness scripts/sympy_compute.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" \
         diff "x**3" --var x --order 2
 
     # Simplify
-    uv run python -m runtime.harness scripts/sympy_compute.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" \
         simplify "sin(x)**2 + cos(x)**2" --strategy trig
 
     # Compute limit
-    uv run python -m runtime.harness scripts/sympy_compute.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" \
         limit "sin(x)/x" --var x --to 0
 
     # Limit at infinity
-    uv run python -m runtime.harness scripts/sympy_compute.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" \
         limit "1/x" --var x --to oo
 
     # One-sided limit (from the right)
-    uv run python -m runtime.harness scripts/sympy_compute.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" \
         limit "1/x" --var x --to 0 --dir +
 
     # Matrix determinant
-    uv run python -m runtime.harness scripts/sympy_compute.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" \
         det "[[1,2],[3,4]]"
 
     # Eigenvalues
-    uv run python -m runtime.harness scripts/sympy_compute.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" \
         eigenvalues "[[1,2],[3,4]]"
 
     # Characteristic polynomial
-    uv run python -m runtime.harness scripts/sympy_compute.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" \
         charpoly "[[1,2],[3,4]]" --var lambda
 
 Requires: sympy (pip install sympy)
@@ -52,6 +58,7 @@ Requires: sympy (pip install sympy)
 import argparse
 import asyncio
 import json
+import re
 import sys
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import TimeoutError as FuturesTimeout
@@ -184,6 +191,15 @@ def parse_matrix(matrix_str: str) -> Any:
                 return sympy.Matrix(data)
         except (ValueError, SyntaxError):
             pass
+
+    # Symbolic entries, e.g. [[a, b], [c, d]] or [[1, x], [sqrt(2), 0]]
+    inner = matrix_str[7:-1] if matrix_str.startswith("Matrix(") else matrix_str
+    try:
+        data = safe_parse(inner, {})
+        if isinstance(data, (list, tuple)):
+            return sympy.Matrix(data)
+    except ValueError:
+        pass
 
     raise ValueError(f"Cannot parse matrix: {matrix_str}")
 
@@ -469,7 +485,7 @@ def det_matrix(matrix_str: str) -> dict:
     return {
         "determinant": str(det),
         "latex": sympy.latex(det),
-        "is_singular": det == 0,
+        "is_singular": None if det.is_zero is None else bool(det.is_zero),
         "matrix_size": f"{M.rows}x{M.cols}",
     }
 
@@ -667,6 +683,13 @@ def linsolve_system(equations_str: str, vars_str: str) -> dict:
     """
     sympy = get_sympy()
     from sympy import EmptySet, linsolve
+
+    if not vars_str:
+        found = set()
+        for part in equations_str.split(","):
+            for side in part.split("="):
+                found |= {str(s) for s in safe_parse(side.strip(), {}).free_symbols}
+        vars_str = ",".join(sorted(found))
 
     # Parse variables
     var_names = [v.strip() for v in vars_str.split(",")]
@@ -1241,8 +1264,26 @@ def series_expansion(expr_str: str, variable: str = "x", point: str = "0", order
     else:
         x0 = safe_parse(point)
 
-    # Compute series
-    series_result = sympy.series(expr, var, x0, order)
+    # Compute series; SymPy leaves an essential singularity (exp(1/z) at 0)
+    # unexpanded or raises (sin(1/z) at 0)
+    try:
+        series_result = sympy.series(expr, var, x0, order)
+    except Exception:
+        series_result = expr
+
+    if x0.is_finite and series_result == expr:
+        laurent = _laurent_at(expr, var, x0, order)
+        return {
+            "series": f"{laurent} + ...",
+            "polynomial": str(laurent),
+            "laurent": True,
+            "assumes": "the point is the only finite singularity of f",
+            "point": point,
+            "order": order,
+            "latex": sympy.latex(laurent) + r" + \dots",
+            "expression": str(expr),
+            "variable": variable,
+        }
 
     # Get polynomial form (without O term)
     polynomial = series_result.removeO()
@@ -1256,6 +1297,15 @@ def series_expansion(expr_str: str, variable: str = "x", point: str = "0", order
         "expression": str(expr),
         "variable": variable,
     }
+
+
+def _laurent_at(expr: Any, var: Any, x0: Any, order: int) -> Any:
+    """Truncated Laurent expansion in powers of 1/(var - x0), via w = 1/(var - x0)."""
+    sympy = get_sympy()
+
+    w = sympy.Dummy("w")
+    expansion = sympy.series(expr.subs(var, x0 + 1 / w), w, 0, order).removeO()
+    return expansion.subs(w, 1 / (var - x0))
 
 
 def solve_ode(equation_str: str, func_str: str = "f(x)", ics: str = None) -> dict:
@@ -1280,6 +1330,23 @@ def solve_ode(equation_str: str, func_str: str = "f(x)", ics: str = None) -> dic
     from sympy import Derivative, Eq, Function, dsolve
 
     sympy = get_sympy()
+
+    if not func_str:
+        named = (
+            re.search(r"\b([A-Za-z]\w*)'", equation_str)
+            or re.search(r"Derivative\(\s*([A-Za-z]\w*)", equation_str)
+            or re.search(r"\b([fyuvw])\(\s*[a-z]\s*\)", equation_str)
+        )
+        name = named.group(1) if named else "f"
+        applied = re.search(rf"\b{name}\(\s*([a-z])\s*\)", equation_str)
+        if applied:
+            var_guess = applied.group(1)
+        elif re.search(r"\bt\b", equation_str) and not re.search(r"\bx\b", equation_str):
+            var_guess = "t"
+        else:
+            var_guess = "x"
+        func_str = f"{name}({var_guess})"
+
     # Parse function and variable
     # func_str should be like "f(x)" - extract f and x
     match = re.match(r"(\w+)\((\w+)\)", func_str)
@@ -1289,6 +1356,20 @@ def solve_ode(equation_str: str, func_str: str = "f(x)", ics: str = None) -> dic
     func_name, var_name = match.groups()
     var = sympy.Symbol(var_name)
     f = Function(func_name)
+
+    # Accept y', y'', bare y, and "lhs = rhs"
+    fn, v = re.escape(func_name), re.escape(var_name)
+    equation_str = re.sub(
+        rf"\b{fn}('+)(?:\(\s*{v}\s*\))?",
+        lambda m: f"Derivative({func_name}({var_name}), {var_name}, {len(m.group(1))})",
+        equation_str,
+    )
+    equation_str = re.sub(rf"\b{fn}\b(?!\s*\()", f"{func_name}({var_name})", equation_str)
+    sides = re.split(r"(?<![<>=!])=(?!=)", equation_str)
+    if len(sides) == 2:
+        equation_str = f"({sides[0]}) - ({sides[1]})"
+    if ics:
+        ics = ics.strip().strip("{}").replace(":", "=")
 
     # Build local dict for parsing
     local_dict = {
@@ -1452,6 +1533,346 @@ def safe_solve(equation: str, var: str = "x", domain: str = "complex", timeout: 
         return {"success": False, "error": "computation_error", "message": str(e)}
 
 
+# =============================================================================
+# Matrix-form linear systems and matrix tools
+# =============================================================================
+
+
+def linsolve_matrix(a_str: str, b_str: str) -> dict:
+    """Solve A x = b, reporting ranks (Kronecker-Capelli) and the RREF of [A|b]."""
+    sympy = get_sympy()
+
+    A = parse_matrix(a_str)
+    b = parse_matrix(b_str)
+    if b.rows == 1 and b.cols == A.rows and A.rows != 1:
+        b = b.T
+    if b.rows != A.rows or b.cols != 1:
+        raise ValueError(f"b must be a vector with {A.rows} entries, got {b.rows}x{b.cols}")
+
+    xs = sympy.symbols(f"x1:{A.cols + 1}")
+    solution_set = sympy.linsolve((A, b), *xs)
+    augmented = A.row_join(b)
+    rank_a, rank_ab = A.rank(), augmented.rank()
+    consistent = rank_a == rank_ab
+
+    return {
+        "solutions": [[str(s) for s in sol] for sol in solution_set],
+        "variables": [str(v) for v in xs],
+        "is_consistent": consistent,
+        "is_unique": consistent and rank_a == A.cols,
+        "rank_A": rank_a,
+        "rank_augmented": rank_ab,
+        "free_variables": A.cols - rank_a if consistent else None,
+        "rref_augmented": str(augmented.rref()[0].tolist()),
+        "latex": sympy.latex(solution_set),
+    }
+
+
+def matmul_matrices(a_str: str, b_str: str) -> dict:
+    """Matrix product A*B."""
+    sympy = get_sympy()
+
+    A, B = parse_matrix(a_str), parse_matrix(b_str)
+    if A.cols != B.rows:
+        raise ValueError(f"Incompatible shapes {A.rows}x{A.cols} and {B.rows}x{B.cols}")
+    P = A * B
+    return {"product": str(P.tolist()), "shape": f"{P.rows}x{P.cols}", "latex": sympy.latex(P)}
+
+
+def lu_matrix(matrix_str: str) -> dict:
+    """LU decomposition with the row swaps needed (P*A = L*U)."""
+    sympy = get_sympy()
+
+    M = parse_matrix(matrix_str)
+    L, U, perm = M.LUdecomposition()
+    return {
+        "L": str(L.tolist()),
+        "U": str(U.tolist()),
+        "row_swaps": [list(p) for p in perm],
+        "latex": f"L = {sympy.latex(L)},\\ U = {sympy.latex(U)}",
+    }
+
+
+def qr_matrix(matrix_str: str) -> dict:
+    """QR decomposition (Gram-Schmidt), A = Q*R."""
+    sympy = get_sympy()
+
+    M = parse_matrix(matrix_str)
+    Q, R = M.QRdecomposition()
+    Q, R = Q.applyfunc(sympy.simplify), R.applyfunc(sympy.simplify)
+    return {
+        "Q": str(Q.tolist()),
+        "R": str(R.tolist()),
+        "latex": f"Q = {sympy.latex(Q)},\\ R = {sympy.latex(R)}",
+    }
+
+
+def svd_matrix(matrix_str: str) -> dict:
+    """Singular values (exact and numeric) and the SVD A = U*S*V^H."""
+    sympy = get_sympy()
+
+    M = parse_matrix(matrix_str)
+    singular = M.singular_values()
+    result = {
+        "singular_values": [str(sympy.simplify(s)) for s in singular],
+        "singular_values_numeric": [str(sympy.N(s, 10)) for s in singular],
+    }
+    U, S, V = M.singular_value_decomposition()
+    result.update({"U": str(U.tolist()), "S": str(S.tolist()), "V": str(V.tolist())})
+    return result
+
+
+def matrix_properties(matrix_str: str) -> dict:
+    """Classify a matrix: square, symmetric, orthogonal, triangular, invertible, etc."""
+    sympy = get_sympy()
+
+    M = parse_matrix(matrix_str)
+    props = {"shape": f"{M.rows}x{M.cols}", "square": M.is_square, "rank": M.rank()}
+    if not M.is_square:
+        return props
+
+    I = sympy.eye(M.rows)
+    det = sympy.simplify(M.det())
+    props.update(
+        {
+            "determinant": str(det),
+            "trace": str(sympy.simplify(M.trace())),
+            "invertible": None if det.is_zero is None else not det.is_zero,
+            "identity": M == I,
+            "diagonal": M.is_diagonal(),
+            "upper_triangular": M.is_upper,
+            "lower_triangular": M.is_lower,
+            "symmetric": M.is_symmetric(),
+            "skew_symmetric": M.is_anti_symmetric(),
+            "orthogonal": (M * M.T - I).applyfunc(sympy.simplify).is_zero_matrix,
+            "idempotent": (M * M - M).applyfunc(sympy.simplify).is_zero_matrix,
+            "nilpotent": M.is_nilpotent(),
+        }
+    )
+    if props["symmetric"]:
+        props["positive_definite"] = M.is_positive_definite
+    return props
+
+
+# =============================================================================
+# Series sums, residues, minimal polynomials
+# =============================================================================
+
+
+def sum_series(expr_str: str, variable: str = "n", lower: str = "0", upper: str = "oo") -> dict:
+    """Finite or infinite sum with a convergence verdict for infinite ranges."""
+    sympy = get_sympy()
+
+    var = sympy.Symbol(variable, integer=True)
+    expr = safe_parse(expr_str, {variable: var, "x": sympy.Symbol("x")})
+    lo, hi = safe_parse(lower, {}), safe_parse(upper, {})
+    s = sympy.Sum(expr, (var, lo, hi))
+    value = s.doit()
+
+    converges = None
+    if lo.is_infinite or hi.is_infinite:
+        try:
+            converges = bool(s.is_convergent())
+        except Exception:
+            pass
+
+    closed = not value.has(sympy.Sum)
+    numeric = None
+    if converges is not False:
+        try:
+            numeric = str(sympy.N(value if closed else s, 15))
+        except Exception:
+            pass
+
+    return {
+        "sum": str(value),
+        "latex": sympy.latex(value),
+        "closed_form": closed,
+        "converges": converges,
+        "numeric": numeric,
+    }
+
+
+def residue_at(expr_str: str, variable: str = "z", point: str = None) -> dict:
+    """Residue at a point, or at every pole of a rational function if no point is given."""
+    sympy = get_sympy()
+
+    var = sympy.Symbol(variable)
+    expr = safe_parse(expr_str, {variable: var})
+
+    if point is not None:
+        at = safe_parse(point, {})
+        try:
+            essential = sympy.series(expr, var, at, 3) == expr
+        except Exception:
+            essential = True
+        if essential:
+            # Essential singularity (sympy.residue can silently return 0 here):
+            # take the coefficient of 1/(z - z0) from the Laurent series
+            w = sympy.Dummy("w")
+            res = sympy.series(expr.subs(var, at + 1 / w), w, 0, 3).removeO().coeff(w, 1)
+            res = sympy.simplify(res)
+            return {
+                "point": str(at),
+                "residue": str(res),
+                "latex": sympy.latex(res),
+                "singularity": "essential",
+                "assumes": "z0 is the only finite singularity of f",
+            }
+        res = sympy.simplify(sympy.residue(expr, var, at))
+        return {"point": str(at), "residue": str(res), "latex": sympy.latex(res)}
+
+    denominator = sympy.denom(sympy.together(expr))
+    poles = sympy.solve(denominator, var)
+    residues = {str(p): str(sympy.simplify(sympy.residue(expr, var, p))) for p in poles}
+    total = sympy.simplify(sum(sympy.residue(expr, var, p) for p in poles))
+    return {"poles": [str(p) for p in poles], "residues": residues, "sum_of_residues": str(total)}
+
+
+def minimal_poly(expr_str: str, variable: str = "x") -> dict:
+    """Minimal polynomial of an algebraic number over Q."""
+    sympy = get_sympy()
+
+    x = sympy.Symbol(variable)
+    alpha = safe_parse(expr_str, {})
+    p = sympy.minimal_polynomial(alpha, x)
+    return {"polynomial": str(p), "degree": int(sympy.degree(p, x)), "latex": sympy.latex(p)}
+
+
+# =============================================================================
+# Propositional logic: truth tables
+# =============================================================================
+
+_LOGIC_TOKEN = re.compile(
+    r"\s*(<->|<=>|->|=>|>>|\|\||&&|[()&|~!^01]|[↔→∧∨¬]|[A-Za-z_][A-Za-z_0-9]*)"
+)
+_EQUIV = {"<->", "<=>", "↔"}
+_IMPL = {"->", "=>", ">>", "→"}
+_OR = {"|", "||", "∨"}
+_AND = {"&", "&&", "∧"}
+_NOT = {"~", "!", "¬"}
+
+
+def parse_logic(formula: str) -> Any:
+    """Parse a propositional formula with conventional precedence.
+
+    From tightest to loosest: not (~ ! ¬), and (& && ∧), xor (^), or (| || ∨),
+    implies (-> => >> →, right-associative), equivalent (<-> <=> ↔).
+    """
+    sympy = get_sympy()
+    from sympy.logic.boolalg import And, Equivalent, Implies, Not, Or, Xor, false, true
+
+    tokens, pos = [], 0
+    text = formula.strip()
+    while pos < len(text):
+        m = _LOGIC_TOKEN.match(text, pos)
+        if not m or m.end() == pos:
+            raise ValueError(f"Unexpected input at position {pos}: {text[pos:]!r}")
+        tokens.append(m.group(1))
+        pos = m.end()
+
+    i = 0
+
+    def peek():
+        return tokens[i] if i < len(tokens) else None
+
+    def take():
+        nonlocal i
+        i += 1
+        return tokens[i - 1]
+
+    def equiv():
+        left = impl()
+        while peek() in _EQUIV:
+            take()
+            left = Equivalent(left, impl())
+        return left
+
+    def impl():
+        left = disj()
+        if peek() in _IMPL:
+            take()
+            return Implies(left, impl())
+        return left
+
+    def disj():
+        left = xor()
+        while peek() in _OR:
+            take()
+            left = Or(left, xor())
+        return left
+
+    def xor():
+        left = conj()
+        while peek() == "^":
+            take()
+            left = Xor(left, conj())
+        return left
+
+    def conj():
+        left = unary()
+        while peek() in _AND:
+            take()
+            left = And(left, unary())
+        return left
+
+    def unary():
+        if peek() in _NOT:
+            take()
+            return Not(unary())
+        return atom()
+
+    def atom():
+        tok = take() if peek() is not None else None
+        if tok == "(":
+            inner = equiv()
+            if take() != ")":
+                raise ValueError("Missing closing parenthesis")
+            return inner
+        if tok in ("1", "True"):
+            return true
+        if tok in ("0", "False"):
+            return false
+        if tok and (tok[0].isalpha() or tok[0] == "_"):
+            return sympy.Symbol(tok)
+        raise ValueError(f"Unexpected token {tok!r}")
+
+    expr = equiv()
+    if i != len(tokens):
+        raise ValueError(f"Unexpected token {tokens[i]!r}")
+    return expr
+
+
+def truth_table_formula(formula_str: str) -> dict:
+    """Truth table plus tautology/contradiction checks and simplified CNF/DNF."""
+    sympy = get_sympy()
+    from itertools import product
+
+    from sympy.logic.inference import satisfiable
+
+    expr = parse_logic(formula_str)
+    variables = sorted(expr.free_symbols, key=str)
+
+    rows = None
+    if len(variables) <= 8:
+        rows = []
+        for combo in product([False, True], repeat=len(variables)):
+            value = bool(expr.subs(dict(zip(variables, combo))))
+            rows.append({**{str(v): int(c) for v, c in zip(variables, combo)}, "value": int(value)})
+
+    small = len(variables) <= 8
+    return {
+        "formula": str(expr),
+        "variables": [str(v) for v in variables],
+        "rows": rows,
+        "tautology": satisfiable(sympy.Not(expr)) is False,
+        "contradiction": satisfiable(expr) is False,
+        "cnf": str(sympy.to_cnf(expr, simplify=small)),
+        "dnf": str(sympy.to_dnf(expr, simplify=small)),
+        "latex": sympy.latex(expr),
+    }
+
+
 def parse_args():
     """Parse CLI arguments."""
     parser = argparse.ArgumentParser(
@@ -1477,6 +1898,8 @@ def parse_args():
     integrate_p.add_argument(
         "--bounds", nargs=2, metavar=("LOWER", "UPPER"), help="Bounds for definite integral"
     )
+    integrate_p.add_argument("--lower", help="Lower bound (use --lower=-oo for negative values)")
+    integrate_p.add_argument("--upper", help="Upper bound")
 
     # Differentiate command
     diff_p = subparsers.add_parser("diff", help="Differentiate expressions")
@@ -1531,9 +1954,45 @@ def parse_args():
     # Linsolve command
     linsolve_p = subparsers.add_parser("linsolve", help="Solve system of linear equations")
     linsolve_p.add_argument(
-        "equations", help="Comma-separated equations (e.g., 'x + y - 1, x - y - 3')"
+        "equations",
+        help="Comma-separated equations ('x + y = 1, x - y = 3') or a coefficient matrix A",
     )
-    linsolve_p.add_argument("--vars", required=True, help="Comma-separated variables (e.g., 'x,y')")
+    linsolve_p.add_argument("rhs", nargs="?", help="Right-hand side vector b when A is a matrix")
+    linsolve_p.add_argument("--vars", help="Comma-separated variables (default: auto-detect)")
+
+    matmul_p = subparsers.add_parser("matmul", help="Matrix product A*B")
+    matmul_p.add_argument("a", help="Matrix A")
+    matmul_p.add_argument("b", help="Matrix B")
+
+    lu_p = subparsers.add_parser("lu", help="LU decomposition")
+    lu_p.add_argument("matrix", help="Matrix as [[a,b],[c,d]]")
+
+    qr_p = subparsers.add_parser("qr", help="QR decomposition")
+    qr_p.add_argument("matrix", help="Matrix as [[a,b],[c,d]]")
+
+    svd_p = subparsers.add_parser("svd", help="Singular value decomposition")
+    svd_p.add_argument("matrix", help="Matrix as [[a,b],[c,d]]")
+
+    mtype_p = subparsers.add_parser("matrix_type", help="Classify matrix properties")
+    mtype_p.add_argument("matrix", help="Matrix as [[a,b],[c,d]]")
+
+    sum_p = subparsers.add_parser("sum", help="Finite or infinite sum with convergence check")
+    sum_p.add_argument("expression", help="Summand (e.g., '1/n**2')")
+    sum_p.add_argument("--var", default="n", help="Summation index (default: n)")
+    sum_p.add_argument("--from", dest="lower", default="0", help="Lower bound (default: 0)")
+    sum_p.add_argument("--to", dest="upper", default="oo", help="Upper bound (default: oo)")
+
+    residue_p = subparsers.add_parser("residue", help="Residue at a point or at all poles")
+    residue_p.add_argument("expression", help="Function of the complex variable")
+    residue_p.add_argument("--var", default="z", help="Complex variable (default: z)")
+    residue_p.add_argument("--at", help="Point (default: all poles of a rational function)")
+
+    minpoly_p = subparsers.add_parser("minpoly", help="Minimal polynomial of an algebraic number")
+    minpoly_p.add_argument("expression", help="Algebraic number (e.g., 'sqrt(2) + sqrt(3)')")
+    minpoly_p.add_argument("--var", default="x", help="Polynomial variable (default: x)")
+
+    truthtable_p = subparsers.add_parser("truthtable", help="Truth table of a propositional formula")
+    truthtable_p.add_argument("formula", help="Formula, e.g. '(p & (p -> q)) -> q'")
 
     # Nullspace command
     nullspace_p = subparsers.add_parser("nullspace", help="Compute matrix null space")
@@ -1594,8 +2053,8 @@ def parse_args():
 
     # Dsolve command
     dsolve_p = subparsers.add_parser("dsolve", help="Solve ordinary differential equations")
-    dsolve_p.add_argument("equation", help="ODE expression (e.g., 'Derivative(f(x), x) - f(x)')")
-    dsolve_p.add_argument("--func", default="f(x)", help="Function and variable (e.g., 'f(x)')")
+    dsolve_p.add_argument("equation", help="ODE, e.g. \"y'' + y = sin(x)\" or 'Derivative(f(x), x) - f(x)'")
+    dsolve_p.add_argument("--func", default=None, help="Function and variable (default: auto-detect, e.g. 'y(x)')")
     dsolve_p.add_argument("--ics", default=None, help="Initial conditions (e.g., 'f(0)=1')")
 
     # Laplace command
@@ -1671,6 +2130,15 @@ def parse_args():
         partition_p,
         catalan_p,
         bell_p,
+        matmul_p,
+        lu_p,
+        qr_p,
+        svd_p,
+        mtype_p,
+        sum_p,
+        residue_p,
+        minpoly_p,
+        truthtable_p,
     ]:
         p.add_argument("--json", action="store_true", help="Output as JSON")
 
@@ -1685,7 +2153,7 @@ async def main():
         if args.command == "solve":
             result = solve_equation(args.expression, args.var, args.domain)
         elif args.command == "integrate":
-            bounds = args.bounds or [None, None]
+            bounds = args.bounds or [args.lower, args.upper]
             result = integrate_expr(args.expression, args.var, bounds[0], bounds[1])
         elif args.command == "diff":
             result = differentiate_expr(args.expression, args.var, args.order)
@@ -1706,7 +2174,28 @@ async def main():
         elif args.command == "transpose":
             result = transpose_matrix(args.matrix)
         elif args.command == "linsolve":
-            result = linsolve_system(args.equations, args.vars)
+            if args.rhs is not None:
+                result = linsolve_matrix(args.equations, args.rhs)
+            else:
+                result = linsolve_system(args.equations, args.vars)
+        elif args.command == "matmul":
+            result = matmul_matrices(args.a, args.b)
+        elif args.command == "lu":
+            result = lu_matrix(args.matrix)
+        elif args.command == "qr":
+            result = qr_matrix(args.matrix)
+        elif args.command == "svd":
+            result = svd_matrix(args.matrix)
+        elif args.command == "matrix_type":
+            result = matrix_properties(args.matrix)
+        elif args.command == "sum":
+            result = sum_series(args.expression, args.var, args.lower, args.upper)
+        elif args.command == "residue":
+            result = residue_at(args.expression, args.var, args.at)
+        elif args.command == "minpoly":
+            result = minimal_poly(args.expression, args.var)
+        elif args.command == "truthtable":
+            result = truth_table_formula(args.formula)
         elif args.command == "nullspace":
             result = nullspace_matrix(args.matrix)
         elif args.command == "rref":
@@ -1763,4 +2252,6 @@ async def main():
 
 
 if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
     asyncio.run(main())

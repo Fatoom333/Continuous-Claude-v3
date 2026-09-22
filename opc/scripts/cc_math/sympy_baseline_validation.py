@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#     "sympy>=1.14",
+# ]
+# ///
 """SymPy Baseline Validation - Test accuracy across mathematical domains.
 
 This script tests SymPy's accuracy on a curated test set to determine
 if a Math Verification Pipeline is worth building.
 
 USAGE:
-    uv run python scripts/sympy_baseline_validation.py
-    uv run python scripts/sympy_baseline_validation.py --json
-    uv run python scripts/sympy_baseline_validation.py --verbose
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_baseline_validation.py"
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_baseline_validation.py" --json
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_baseline_validation.py" --verbose
 
 Results:
     As of 2025-12-31 with SymPy 1.14.0:
@@ -24,7 +30,7 @@ from typing import Any
 
 # Import from sympy_compute
 sys.path.insert(0, ".")
-from scripts.sympy_compute import (
+from sympy_compute import (
     binomial_coeff,
     catalan_number,
     det_matrix,
@@ -1357,4 +1363,6 @@ def main():
 
 
 if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
     main()

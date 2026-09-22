@@ -15,12 +15,12 @@ Use this skill when working on predicate-logic problems in mathematical logic.
 1. **Quantifier Analysis**
    - Identify: ForAll (universal), Exists (existential)
    - Scope of quantifiers and free/bound variables
-   - `z3_solve.py prove "ForAll([x], P(x)) implies P(a)"`
+   - `z3_solve.py prove "Implies(ForAll([x], P(x)), P(a))" --type obj`
 
 2. **Prenex Normal Form**
    - Move all quantifiers to front
    - Standardize variables to avoid capture
-   - `sympy_compute.py simplify "prenex(formula)"`
+   - Done by hand; check it with `z3_solve.py prove "<original> == <prenex_form>" --type obj`
 
 3. **Skolemization (for Exists)**
    - Replace existential quantifiers with Skolem functions
@@ -30,39 +30,41 @@ Use this skill when working on predicate-logic problems in mathematical logic.
 4. **Resolution Proof**
    - Convert to CNF, negate conclusion
    - Apply resolution rule until empty clause or saturation
-   - `z3_solve.py prove "resolution_valid"`
+   - Cross-check validity: `z3_solve.py prove "Implies(<premises>, <conclusion>)" --type obj`
 
 5. **Model Theory**
    - Construct countermodel to refute invalid argument
    - Finite model for finite domain
-   - `z3_solve.py model "Exists([x], P(x) & Not(Q(x)))"`
+   - `z3_solve.py sat "Exists([x], P(x) & Not(Q(x)))" --type obj` (the model lists P, Q and the domain)
 
 ## Tool Commands
 
 ### Z3_Forall
 
 ```bash
-uv run python -m runtime.harness scripts/z3_solve.py prove "ForAll([x], Implies(P(x), Q(x)))"
+# Not valid in general: Z3 answers with a countermodel
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/z3_solve.py" prove "ForAll([x], Implies(P(x), Q(x)))" --type obj
 ```
 
 ### Z3_Exists
 
 ```bash
-uv run python -m runtime.harness scripts/z3_solve.py sat "Exists([x], And(P(x), Not(Q(x))))"
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/z3_solve.py" sat "Exists([x], And(P(x), Not(Q(x))))" --type obj
 ```
 
 ### Z3_Universal_Instantiation
 
 ```bash
-uv run python -m runtime.harness scripts/z3_solve.py prove "Implies(ForAll([x], P(x)), P(a))"
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/z3_solve.py" prove "Implies(ForAll([x], P(x)), P(a))" --type obj
 ```
 
-### Z3_Model
+### Z3_Countermodel
 
 ```bash
-uv run python -m runtime.harness scripts/z3_solve.py model "Exists([x], P(x))"
+# "All P are Q" does not imply "all Q are P": Z3 builds a countermodel
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/z3_solve.py" prove "Implies(ForAll([x], Implies(P(x), Q(x))), ForAll([x], Implies(Q(x), P(x))))" --type obj
 ```
 
 ## Cognitive Tools Reference
 
-See `.claude/skills/math-mode/SKILL.md` for full tool documentation.
+See the `math-unified` skill for the full command list, or run `uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/<script>.py" --help`.

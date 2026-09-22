@@ -66,19 +66,19 @@ Use this skill when working on:
 ### Query Rudin Content
 
 ```bash
-uv run python scripts/ragie_query.py --query "YOUR_TOPIC measure integration" --partition math-textbooks --top-k 5
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/ragie_query.py" --query "YOUR_TOPIC measure integration" --partition math-textbooks --top-k 5
 ```
 
 ### SymPy for Symbolic Computation
 
 ```bash
-uv run python scripts/sympy_compute.py integrate "exp(-x**2)" --var x --bounds "0,oo"
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" integrate "exp(-x**2)" --var x --bounds "0,oo"
 ```
 
 ### Z3 for Verification
 
 ```bash
-uv run python scripts/z3_solve.py prove "forall x, |f(x)| <= M implies bounded"
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/z3_solve.py" prove "forall x, |f(x)| <= M implies bounded"
 ```
 
 ## Key Theorems Reference
@@ -93,4 +93,4 @@ uv run python scripts/z3_solve.py prove "forall x, |f(x)| <= M implies bounded"
 
 ## Cognitive Tools Reference
 
-See `.claude/skills/math-mode/SKILL.md` for full tool documentation.
+See the `math-unified` skill for the full command list, or run `uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/<script>.py" --help`.

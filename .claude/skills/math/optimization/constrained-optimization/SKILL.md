@@ -42,31 +42,21 @@ Use this skill when working on constrained-optimization problems in optimization
 ### Scipy_Slsqp
 
 ```bash
-uv run python -c "from scipy.optimize import minimize; cons = dict(type='eq', fun=lambda x: x[0] + x[1] - 1); res = minimize(lambda x: x[0]**2 + x[1]**2, [1, 1], method='SLSQP', constraints=cons); print('Min at', res.x)"
+uv run --no-project --with scipy --with numpy python -c "from scipy.optimize import minimize; cons = dict(type='eq', fun=lambda x: x[0] + x[1] - 1); res = minimize(lambda x: x[0]**2 + x[1]**2, [1, 1], method='SLSQP', constraints=cons); print('Min at', res.x)"
 ```
 
 ### Sympy_Lagrangian
 
 ```bash
-uv run python -m runtime.harness scripts/sympy_compute.py solve "[2*x - lam, 2*y - lam, x + y - 1]" --vars "[x, y, lam]"
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" solve "[2*x - lam, 2*y - lam, x + y - 1]" --vars "[x, y, lam]"
 ```
 
 ### Z3_Kkt_Satisfied
 
 ```bash
-uv run python -m runtime.harness scripts/z3_solve.py prove "complementary_slackness"
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/z3_solve.py" prove "complementary_slackness"
 ```
-
-## Key Techniques
-
-_From indexed textbooks:_
-
-- [nonlinear programming_tif] Conjugate Direction Methods** - Methods involving directions conjugate to each other with respect to a certain quadratic form, enhancing efficiency in finding minima. Quasi-Newton Methods** - Variants of Newton’s method that approximate the Hessian matrix. Nonderivative Methods\*\* - Address optimization methods that don’t require derivative information.
-- [nonlinear programming_tif] Optimization Over a Convex Set** - Focuses on optimization problems constrained within a convex set. Optimality Conditions:** Similar to unconstrained optimization, but within the context of convex sets. Feasible Directions and Conditional Gradient\*\* - Explores methods that ensure feasibility within constraints.
-- [nonlinear programming_tif] In this chapter we consider the constrained optimization problem minimize f(z) subject to z € X, where we assume throughout that: (a) X is a nonempty and convex subset of 2. When dealing with algo- rithms, we assume in addition that X is closed. The function f: %™ — R is continuously differentiable over X.
-- [nonlinear programming_tif] The methods for obtaining lower bounds are elaborated on in Section 5. Lagrangian relaxation method is discussed in detail. This method requires the optimization of nondifferentiable functions, and some of the major relevant algorithms, subgradient and cutting plane methods, will be discussed in Chapter 6.
-- [nonlinear programming_tif] The image depicts a three-dimensional graphical representation, likely related to linear algebra or optimization. Key elements include: - **Axes**: Three intersecting axes are shown, suggesting a three-dimensional coordinate system. Equation and Constraints\*\*: A linear equation `{x | Ax = b, x ≥ 0}` is noted, indicating a system or set of constraints.
 
 ## Cognitive Tools Reference
 
-See `.claude/skills/math-mode/SKILL.md` for full tool documentation.
+See the `math-unified` skill for the full command list, or run `uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/<script>.py" --help`.

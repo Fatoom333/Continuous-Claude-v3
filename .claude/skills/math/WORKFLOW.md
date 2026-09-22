@@ -61,7 +61,7 @@ Main: Gets 200-token summary (not 2000+ token transcript)
 1. Add topic to `MATH_TOPICS` in generator
 2. Add decision tree to `DECISION_TREES`
 3. Add tool commands to `TOOL_COMMANDS`
-4. Run: `uv run python scripts/generate_math_skills.py --tier N`
+4. Run: `uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/generate_math_skills.py" --tier N`
 
 ## Session Continuity
 

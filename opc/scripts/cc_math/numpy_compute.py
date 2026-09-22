@@ -1,20 +1,26 @@
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#     "numpy",
+# ]
+# ///
 """NumPy computation CLI - 160 functions across 10 categories (linalg, array_math, fft, polynomial, stats, sorting, reduction, math, set, logic).
 
 USAGE:
-    uv run python scripts/numpy_compute.py <command> [args]
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/numpy_compute.py" <command> [args]
 
     # Linear algebra examples
-    uv run python scripts/numpy_compute.py det "[[1,2],[3,4]]"
-    uv run python scripts/numpy_compute.py inv "[[1,2],[3,4]]"
-    uv run python scripts/numpy_compute.py eig "[[1,2],[3,4]]"
-    uv run python scripts/numpy_compute.py svd "[[1,2,3],[4,5,6]]"
-    uv run python scripts/numpy_compute.py solve "[[3,1],[1,2]]" "[9,8]"
-    uv run python scripts/numpy_compute.py lstsq "[[1,1],[1,2],[1,3]]" "[1,2,2]"
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/numpy_compute.py" det "[[1,2],[3,4]]"
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/numpy_compute.py" inv "[[1,2],[3,4]]"
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/numpy_compute.py" eig "[[1,2],[3,4]]"
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/numpy_compute.py" svd "[[1,2,3],[4,5,6]]"
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/numpy_compute.py" solve "[[3,1],[1,2]]" "[9,8]"
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/numpy_compute.py" lstsq "[[1,1],[1,2],[1,3]]" "[1,2,2]"
 """
 
 import sys
 
-from scripts.math_base import (
+from math_base import (
     create_main_parser,
     format_latex_matrix,
     get_array_info,
@@ -2551,6 +2557,8 @@ def cmd_np_array_equiv(a: str, b: str) -> dict:
 # =============================================================================
 
 if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
     parser = create_main_parser(
         "numpy_compute",
         "NumPy computation CLI - Linear Algebra",
