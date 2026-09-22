@@ -25,7 +25,7 @@ Use this skill when working on eigenvalues problems in linear algebra.
    - `sympy_compute.py eigenvectors "[[1,2],[3,4]]"`
 
 4. **Verify**
-   - Check Av = lambda\*v with `z3_solve.py prove`
+   - Check Av = lambda\*v: `sympy_compute.py matmul "<matrix>" "<eigenvector>"`
    - Verify algebraic/geometric multiplicity
 
 ## Tool Commands
@@ -33,21 +33,22 @@ Use this skill when working on eigenvalues problems in linear algebra.
 ### Sympy_Eigenvalues
 
 ```bash
-uv run python -m runtime.harness scripts/sympy_compute.py eigenvalues "[[1,2],[3,4]]"
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" eigenvalues "[[1,2],[3,4]]"
 ```
 
 ### Sympy_Charpoly
 
 ```bash
-uv run python -m runtime.harness scripts/sympy_compute.py charpoly "[[a,b],[c,d]]" --var lam
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" charpoly "[[a,b],[c,d]]" --var lam
 ```
 
-### Z3_Verify
+### Verify_Av_equals_lambda_v
 
 ```bash
-uv run python -m runtime.harness scripts/z3_solve.py sat "det(A - lambda*I) == 0"
+# v = (1, 1) with lambda = 3 for A = [[2,1],[1,2]]: expect [[3], [3]]
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" matmul "[[2,1],[1,2]]" "[[1],[1]]"
 ```
 
 ## Cognitive Tools Reference
 
-See `.claude/skills/math-mode/SKILL.md` for full tool documentation.
+See the `math-unified` skill for the full command list, or run `uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/<script>.py" --help`.

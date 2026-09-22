@@ -269,4 +269,3 @@ The workflow pauses for user input when:
 
 - `/loogle-search` - Search Mathlib by type signature (used in Phase 1 RESEARCH)
 - `/math-router` - For computation (integrals, equations)
-- `/lean4` - Direct Lean syntax access

@@ -46,27 +46,21 @@ Use this skill when working on channel-capacity problems in information theory.
 ### Scipy_Mutual_Info
 
 ```bash
-uv run python -c "from scipy.stats import entropy; p = [0.5, 0.5]; q = [0.6, 0.4]; H_X = entropy(p, base=2); H_Y = entropy(q, base=2); print('H(X)=', H_X, 'H(Y)=', H_Y)"
+uv run --no-project --with scipy --with numpy python -c "from scipy.stats import entropy; p = [0.5, 0.5]; q = [0.6, 0.4]; H_X = entropy(p, base=2); H_Y = entropy(q, base=2); print('H(X)=', H_X, 'H(Y)=', H_Y)"
 ```
 
 ### Sympy_Bsc_Capacity
 
 ```bash
-uv run python -m runtime.harness scripts/sympy_compute.py simplify "1 + p*log(p, 2) + (1-p)*log(1-p, 2)"
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" simplify "1 + p*log(p, 2) + (1-p)*log(1-p, 2)"
 ```
 
 ### Z3_Capacity_Bound
 
 ```bash
-uv run python -m runtime.harness scripts/z3_solve.py prove "I(X;Y) <= H(X)"
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/z3_solve.py" prove "I(X;Y) <= H(X)"
 ```
-
-## Key Techniques
-
-_From indexed textbooks:_
-
-- [Elements of Information Theory] Elements of Information Theory -- Thomas M* Cover &amp; Joy A* Thomas -- 2\_, Auflage, New York, NY, 2012 -- Wiley-Interscience -- 9780470303153 -- 2fcfe3e8a16b3aeefeaf9429fcf9a513 -- Anna’s Archive. Using a randomly generated code, Shannon showed that one can send information at any rate below the capacity _C_ of the channel with an arbitrarily low probability of error. The idea of a randomly generated code is very unusual.
 
 ## Cognitive Tools Reference
 
-See `.claude/skills/math-mode/SKILL.md` for full tool documentation.
+See the `math-unified` skill for the full command list, or run `uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/<script>.py" --help`.

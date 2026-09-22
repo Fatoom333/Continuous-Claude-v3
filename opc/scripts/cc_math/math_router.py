@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# dependencies = []
+# ///
 """Deterministic router for math cognitive stack.
 
 Given a user intent, returns the exact CLI command to run without
@@ -6,18 +10,18 @@ needing to read skill documentation at runtime.
 
 USAGE:
     # Route a math request
-    uv run python scripts/math_router.py route "integrate sin(x)"
-    uv run python scripts/math_router.py route "convert 5 meters to feet"
-    uv run python scripts/math_router.py route "prove x + y == y + x"
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/math_router.py" route "integrate sin(x)"
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/math_router.py" route "convert 5 meters to feet"
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/math_router.py" route "prove x + y == y + x"
 
     # List all available commands
-    uv run python scripts/math_router.py list
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/math_router.py" list
 
     # List commands for a category
-    uv run python scripts/math_router.py list --category sympy
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/math_router.py" list --category sympy
 
     # Show route confidence details
-    uv run python scripts/math_router.py route "differentiate x^3" --verbose
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/math_router.py" route "differentiate x^3" --verbose
 """
 
 from __future__ import annotations
@@ -104,13 +108,20 @@ def extract_diff_expr(intent: str) -> dict[str, Any]:
 
 
 def extract_integrate_expr(intent: str) -> dict[str, Any]:
-    """Extract expression and bounds for integration."""
-    result = extract_expr_var(intent)
+    """Extract expression, variable and bounds: 'integrate x^2 dx from 0 to pi'."""
+    bounds_match = re.search(r"\s+from\s+(\S+)\s+to\s+(\S+)\s*$", intent, flags=re.IGNORECASE)
+    core = intent[: bounds_match.start()] if bounds_match else intent
 
-    # Check for definite integral bounds
-    bounds_match = re.search(r"from\s*([\d\.\-]+)\s*to\s*([\d\.\-]+)", intent, flags=re.IGNORECASE)
+    dvar = re.search(r"\s+d([a-z])\s*$", core)
+    if dvar:
+        core = core[: dvar.start()]
+    result = extract_expr_var(core)
+    if dvar:
+        result["var"] = dvar.group(1)
+
     if bounds_match:
-        result["bounds"] = [bounds_match.group(1), bounds_match.group(2)]
+        norm = lambda b: re.sub(r"^(-?)(?:infinity|inf)$", r"\1oo", b, flags=re.IGNORECASE)
+        result["bounds"] = [norm(bounds_match.group(1)), norm(bounds_match.group(2))]
 
     return result
 
@@ -2017,7 +2028,7 @@ def _build_sympy_command(
         _append_optional_arg(cmd_parts, args, "var", "var")
         _append_optional_with_default(cmd_parts, args, "order", "order", 1)
         if args.get("bounds"):
-            cmd_parts.append(f"--bounds {args['bounds'][0]} {args['bounds'][1]}")
+            cmd_parts.append(f"--lower={args['bounds'][0]} --upper={args['bounds'][1]}")
         _append_optional_arg(cmd_parts, args, "to", "to")
         _append_optional_arg(cmd_parts, args, "dir", "dir")
         _append_optional_with_default(cmd_parts, args, "domain", "domain", "complex")
@@ -2267,7 +2278,7 @@ def build_command(script: str, subcommand: str, args: dict[str, Any]) -> str:
     Uses dispatch table pattern to route to script-specific builders,
     keeping complexity low and logic modular.
     """
-    cmd_parts = ["uv", "run", "python", f"scripts/{script}", subcommand]
+    cmd_parts = ["uv", "run", "--script", f'"$CLAUDE_OPC_DIR/scripts/cc_math/{script}"', subcommand]
 
     # Dispatch to script-specific builder if available
     builder = COMMAND_BUILDERS.get(script)
@@ -3200,4 +3211,6 @@ def _extract_complex(intent: str) -> str | None:
 
 
 if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
     main()

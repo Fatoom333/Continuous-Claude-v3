@@ -15,7 +15,7 @@ Use this skill when working on propositional-logic problems in mathematical logi
 1. **Identify Formula Structure**
    - Classify: tautology, contradiction, or contingent?
    - Main connective: AND, OR, IMPLIES, NOT, IFF?
-   - `z3_solve.py sat "formula"` to check satisfiability
+   - `z3_solve.py sat "<formula>"` to check satisfiability
 
 2. **Truth Table Method**
    - For small formulas (<=4 variables): enumerate all valuations
@@ -37,27 +37,27 @@ Use this skill when working on propositional-logic problems in mathematical logi
 ### Z3_Sat
 
 ```bash
-uv run python -m runtime.harness scripts/z3_solve.py sat "And(p, Implies(p, q), Not(q))"
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/z3_solve.py" sat "And(p, Implies(p, q), Not(q))"
 ```
 
 ### Z3_Tautology
 
 ```bash
-uv run python -m runtime.harness scripts/z3_solve.py prove "Implies(And(p, Implies(p, q)), q)"
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/z3_solve.py" prove "Implies(And(p, Implies(p, q)), q)"
 ```
 
 ### Sympy_Truthtable
 
 ```bash
-uv run python -m runtime.harness scripts/sympy_compute.py truthtable "p & (p >> q) >> q"
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" truthtable "p & (p >> q) >> q"
 ```
 
 ### Z3_Modus_Ponens
 
 ```bash
-uv run python -m runtime.harness scripts/z3_solve.py prove "Implies(And(p, Implies(p,q)), q)"
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/z3_solve.py" prove "Implies(And(p, Implies(p,q)), q)"
 ```
 
 ## Cognitive Tools Reference
 
-See `.claude/skills/math-mode/SKILL.md` for full tool documentation.
+See the `math-unified` skill for the full command list, or run `uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/<script>.py" --help`.

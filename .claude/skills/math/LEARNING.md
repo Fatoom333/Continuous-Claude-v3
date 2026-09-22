@@ -57,13 +57,13 @@ cat thoughts/shared/handoffs/open-source-release/current.md
 ### Analyze Recent Session
 
 ```bash
-uv run python scripts/braintrust_analyze.py --recent
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/braintrust_analyze.py" --recent
 ```
 
 ### Specific Session
 
 ```bash
-uv run python scripts/braintrust_analyze.py --session-id <id>
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/braintrust_analyze.py" --session-id <id>
 ```
 
 ### What Braintrust Shows

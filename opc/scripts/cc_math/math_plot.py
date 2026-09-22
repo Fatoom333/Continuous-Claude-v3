@@ -1,20 +1,29 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#     "sympy>=1.14",
+#     "numpy",
+#     "matplotlib",
+#     "plotly",
+# ]
+# ///
 """Math visualization script - plots, 3D surfaces, LaTeX rendering.
 
 USAGE:
     # 2D plot
-    uv run python scripts/math_plot.py plot2d "sin(x)" \\
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/math_plot.py" plot2d "sin(x)" \\
         --var x --range -10 10 --output plot.png
 
     # 3D surface
-    uv run python scripts/math_plot.py plot3d "x**2 + y**2" \\
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/math_plot.py" plot3d "x**2 + y**2" \\
         --xvar x --yvar y --range 5 --output surface.html
 
     # LaTeX to PNG
-    uv run python scripts/math_plot.py latex "\\int e^{-x^2} dx" --output equation.png
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/math_plot.py" latex "\\int e^{-x^2} dx" --output equation.png
 
     # Multiple 2D functions
-    uv run python scripts/math_plot.py plot2d-multi "sin(x),cos(x)" \\
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/math_plot.py" plot2d-multi "sin(x),cos(x)" \\
         --var x --range -6.28 6.28 --output multi.png
 
 Requires: matplotlib, plotly, sympy, numpy
@@ -542,4 +551,6 @@ def main():
 
 
 if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
     main()

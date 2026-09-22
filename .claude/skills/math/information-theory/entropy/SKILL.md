@@ -46,27 +46,21 @@ Use this skill when working on entropy problems in information theory.
 ### Scipy_Entropy
 
 ```bash
-uv run python -c "from scipy.stats import entropy; p = [0.25, 0.25, 0.25, 0.25]; H = entropy(p, base=2); print('Entropy:', H, 'bits')"
+uv run --no-project --with scipy --with numpy python -c "from scipy.stats import entropy; p = [0.25, 0.25, 0.25, 0.25]; H = entropy(p, base=2); print('Entropy:', H, 'bits')"
 ```
 
 ### Scipy_Kl_Div
 
 ```bash
-uv run python -c "from scipy.stats import entropy; p = [0.5, 0.5]; q = [0.9, 0.1]; kl = entropy(p, q); print('KL divergence:', kl)"
+uv run --no-project --with scipy --with numpy python -c "from scipy.stats import entropy; p = [0.5, 0.5]; q = [0.9, 0.1]; kl = entropy(p, q); print('KL divergence:', kl)"
 ```
 
 ### Sympy_Entropy
 
 ```bash
-uv run python -m runtime.harness scripts/sympy_compute.py simplify "-p*log(p, 2) - (1-p)*log(1-p, 2)"
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" simplify "-p*log(p, 2) - (1-p)*log(1-p, 2)"
 ```
-
-## Key Techniques
-
-_From indexed textbooks:_
-
-- [Elements of Information Theory] Elements of Information Theory -- Thomas M* Cover &amp; Joy A* Thomas -- 2\_, Auflage, New York, NY, 2012 -- Wiley-Interscience -- 9780470303153 -- 2fcfe3e8a16b3aeefeaf9429fcf9a513 -- Anna’s Archive. What is the channel capacity of this channel? This is the multiple\-access channel solved by Liao and Ahlswede.
 
 ## Cognitive Tools Reference
 
-See `.claude/skills/math-mode/SKILL.md` for full tool documentation.
+See the `math-unified` skill for the full command list, or run `uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/<script>.py" --help`.

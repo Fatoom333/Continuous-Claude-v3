@@ -161,5 +161,5 @@ When user is stuck, suggest:
 
 - **math-intuition-builder** - reset understanding
 - **math-model-selector** - if framework was wrong
-- **math-mode** - for verification computations
+- **math-unified** - for verification computations
 - **Relevant domain skill** - for alternative approach

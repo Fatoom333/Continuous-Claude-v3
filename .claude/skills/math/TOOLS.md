@@ -7,7 +7,7 @@ Complete reference for all mathematical computation tools.
 ### Equation Solving
 
 ```bash
-uv run python scripts/sympy_compute.py solve "x**2 - 4 = 0" --var x --domain real
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" solve "x**2 - 4 = 0" --var x --domain real
 # Returns: {"solutions": ["-2", "2"], "verified": true}
 ```
 
@@ -15,42 +15,42 @@ uv run python scripts/sympy_compute.py solve "x**2 - 4 = 0" --var x --domain rea
 
 ```bash
 # Differentiation
-uv run python scripts/sympy_compute.py diff "x**3 + 2*x" --var x --order 1
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" diff "x**3 + 2*x" --var x --order 1
 
 # Integration
-uv run python scripts/sympy_compute.py integrate "x**2" --var x
-uv run python scripts/sympy_compute.py integrate "x**2" --var x --bounds "[0, 1]"
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" integrate "x**2" --var x
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" integrate "x**2" --var x --bounds "[0, 1]"
 
 # Limits
-uv run python scripts/sympy_compute.py limit "sin(x)/x" --var x --to 0
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" limit "sin(x)/x" --var x --to 0
 ```
 
 ### Linear Algebra
 
 ```bash
 # Determinant
-uv run python scripts/sympy_compute.py det "[[1,2],[3,4]]"
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" det "[[1,2],[3,4]]"
 
 # Eigenvalues
-uv run python scripts/sympy_compute.py eigenvalues "[[2,0],[0,3]]"
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" eigenvalues "[[2,0],[0,3]]"
 
 # Eigenvectors (with multiplicities)
-uv run python scripts/sympy_compute.py eigenvectors "[[1,2],[2,1]]"
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" eigenvectors "[[1,2],[2,1]]"
 
 # Matrix inverse
-uv run python scripts/sympy_compute.py inverse "[[1,2],[3,4]]"
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" inverse "[[1,2],[3,4]]"
 
 # Transpose
-uv run python scripts/sympy_compute.py transpose "[[1,2,3],[4,5,6]]"
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" transpose "[[1,2,3],[4,5,6]]"
 
 # Characteristic polynomial
-uv run python scripts/sympy_compute.py charpoly "[[1,2],[3,4]]" --var t
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" charpoly "[[1,2],[3,4]]" --var t
 ```
 
 ### Simplification
 
 ```bash
-uv run python scripts/sympy_compute.py simplify "sin(x)**2 + cos(x)**2"
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" simplify "sin(x)**2 + cos(x)**2"
 # Returns: {"simplified": "1"}
 ```
 
@@ -59,13 +59,13 @@ uv run python scripts/sympy_compute.py simplify "sin(x)**2 + cos(x)**2"
 ### Satisfiability
 
 ```bash
-uv run python scripts/z3_solve.py sat "x > 0, x < 5, x != 3"
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/z3_solve.py" sat "x > 0, x < 5, x != 3"
 ```
 
 ### Prove/Disprove
 
 ```bash
-uv run python scripts/z3_solve.py prove "x**2 >= 0"
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/z3_solve.py" prove "x**2 >= 0"
 ```
 
 ## Lean 4 (Formal Verification)

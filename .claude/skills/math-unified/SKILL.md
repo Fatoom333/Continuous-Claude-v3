@@ -50,7 +50,7 @@ For formal proofs, use `/prove` instead.
 ### SymPy (Symbolic Math)
 
 ```bash
-uv run python "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" <command> <args>
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" <command> <args>
 ```
 
 | Command     | Description                  | Example                                           |
@@ -75,8 +75,13 @@ uv run python "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" <command> <args
 | `rref` | Row echelon form |
 | `rank` | Matrix rank |
 | `nullspace` | Null space basis |
-| `linsolve` | Linear system Ax=b |
+| `linsolve` | Linear system: `"x + y = 3, x - y = 1"` or matrix form `"[[1,2],[3,4]]" "[5,6]"` (ranks, free variables, RREF of [A\|b]) |
 | `charpoly` | Characteristic polynomial |
+| `matmul` | Product `"<A>" "<B>"` |
+| `lu` / `qr` / `svd` | Decompositions |
+| `matrix_type` | Symmetric, orthogonal, triangular, invertible, nilpotent, ... |
+
+Matrices may contain symbols: `det "[[a,b],[c,d]]"`.
 
 **Number Theory:**
 | Command | Description |
@@ -87,6 +92,17 @@ uv run python "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" <command> <args
 | `gcd` | Greatest common divisor |
 | `lcm` | Least common multiple |
 | `modinverse` | Modular inverse |
+
+**Series, Complex Analysis, Algebra, Logic:**
+| Command | Description |
+|---------|-------------|
+| `sum` | Series `sum "1/n**2" --var n --from 1 --to oo` with convergence verdict |
+| `residue` | `residue "<f>" --var z --at <z0>`; without `--at` lists all poles and residues |
+| `minpoly` | Minimal polynomial of an algebraic number |
+| `truthtable` | Truth table, tautology/contradiction, CNF/DNF: `truthtable "(p & (p -> q)) -> q"` |
+
+`series` at an essential singularity (e.g. `exp(1/z)` at 0) returns the Laurent series.
+`dsolve` accepts `"y'' + y = sin(x)"` with `--ics "y(0)=1, y'(0)=0"`.
 
 **Combinatorics:**
 | Command | Description |
@@ -103,7 +119,7 @@ uv run python "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" <command> <args
 ### Z3 (Constraint Solving)
 
 ```bash
-uv run python "$CLAUDE_OPC_DIR/scripts/cc_math/z3_solve.py" <command> <args>
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/z3_solve.py" <command> <args>
 ```
 
 | Command    | Use Case                            |
@@ -112,22 +128,24 @@ uv run python "$CLAUDE_OPC_DIR/scripts/cc_math/z3_solve.py" <command> <args>
 | `prove`    | Is this always true?                |
 | `optimize` | Find min/max subject to constraints |
 
+Constraints use Python syntax plus `&&`, `||`, `!`, chained `0 < x < 3`, `ForAll`/`Exists`, and undeclared predicates like `P(x)` (use `--type obj` for an abstract domain). Names used as logical operands are booleans automatically. Default timeout 10 s (`--timeout` ms).
+
 ---
 
 ### Pint (Units)
 
 ```bash
-uv run python "$CLAUDE_OPC_DIR/scripts/cc_math/pint_compute.py" convert <value> <from_unit> <to_unit>
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/pint_compute.py" convert "<quantity>" --to <unit>
 ```
 
-Example: `convert 5 miles kilometers`
+Example: `pint_compute.py convert "5 miles" --to kilometers`
 
 ---
 
 ### Math Router (Auto-Route)
 
 ```bash
-uv run python "$CLAUDE_OPC_DIR/scripts/cc_math/math_router.py" route "<natural language request>"
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/math_router.py" route "<request>"
 ```
 
 Returns the exact command to run. Use when unsure which script.
@@ -177,7 +195,7 @@ I decide based on your request:
 
 ```
 User: Solve x² - 5x + 6 = 0
-Claude: uv run python "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" solve "x**2 - 5*x + 6" --var x
+Claude: uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" solve "x**2 - 5*x + 6" --var x
 Result: x = 2 or x = 3
 ```
 
@@ -185,7 +203,7 @@ Result: x = 2 or x = 3
 
 ```
 User: Find eigenvalues of [[2, 1], [1, 2]]
-Claude: uv run python "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" eigenvalues "[[2,1],[1,2]]"
+Claude: uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" eigenvalues "[[2,1],[1,2]]"
 Result: {1: 1, 3: 1}  (eigenvalue 1 with multiplicity 1, eigenvalue 3 with multiplicity 1)
 ```
 
@@ -193,7 +211,7 @@ Result: {1: 1, 3: 1}  (eigenvalue 1 with multiplicity 1, eigenvalue 3 with multi
 
 ```
 User: Is x² + y² ≥ 2xy always true?
-Claude: uv run python "$CLAUDE_OPC_DIR/scripts/cc_math/z3_solve.py" prove "x**2 + y**2 >= 2*x*y"
+Claude: uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/z3_solve.py" prove "x**2 + y**2 >= 2*x*y"
 Result: PROVED (equivalent to (x-y)² ≥ 0)
 ```
 
@@ -201,7 +219,7 @@ Result: PROVED (equivalent to (x-y)² ≥ 0)
 
 ```
 User: How many kilometers in 26.2 miles?
-Claude: uv run python "$CLAUDE_OPC_DIR/scripts/cc_math/pint_compute.py" convert 26.2 miles kilometers
+Claude: uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/pint_compute.py" convert "26.2 miles" --to kilometers
 Result: 42.16 km
 ```
 

@@ -41,37 +41,27 @@ Use this skill when working on operator-theory problems in functional analysis.
 ### Z3_Bounded_Operator
 
 ```bash
-uv run python -m runtime.harness scripts/z3_solve.py prove "norm(Tx) <= M*norm(x)"
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/z3_solve.py" prove "norm(Tx) <= M*norm(x)"
 ```
 
 ### Sympy_Adjoint
 
 ```bash
-uv run python -m runtime.harness scripts/sympy_compute.py simplify "<Tx, y> - <x, T_star_y>"
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" simplify "<Tx, y> - <x, T_star_y>"
 ```
 
 ### Z3_Spectral
 
 ```bash
-uv run python -m runtime.harness scripts/z3_solve.py prove "self_adjoint implies real_spectrum"
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/z3_solve.py" prove "self_adjoint implies real_spectrum"
 ```
 
 ### Sympy_Compact
 
 ```bash
-uv run python -m runtime.harness scripts/sympy_compute.py limit "norm(T - T_n)" --var n --at oo
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py" limit "norm(T - T_n)" --var n --at oo
 ```
-
-## Key Techniques
-
-_From indexed textbooks:_
-
-- [Introductory Functional Analysis with Applications] Spectral theory is one of the main branches of modern functional analysis and its applications. Roughly speaking, it is concerned with certain inverse operators, their general properties and their relations to the original operators. Such inverse operators arise quite naturally in connection with the problem of solving equations (systems of linear algebraic equations, differential equations, integral equations).
-- [Introductory Functional Analysis with Applications] Unbounded linear operators in Hilb,ert spaces will be considered in Chap. Brief orientation about main content of Chap. We begin with finite dimensional vector spaces.
-- [Introductory Functional Analysis with Applications] Most unbounded linear operators occurring in practical problems are closed or have closed linear extensions (Sec. Unbounded Linear Operators in Hilbert Space The spectrum of a self-adjoint linear operator is real, also in the unbounded case (d. T is obtained by means of the Cayley transform U= (T- iI)(T+ iI)-1 of T (d.
-- [Introductory Functional Analysis with Applications] Compact Operators and Their Spectrum is called a degenerate kernel. Here we may assume each of the two sets {ab· . If an equation (1) with such a kernel has a solution x, show that it must be of the form n x(s' = ji(s) + lot L cjaj(s), j~l and the unknown constants must satisfy cj - n lot L ajkCk = Yj' k~l where j= 1,···, n.
-- [Introductory Functional Analysis with Applications] As indicated before, our key to the application of complex analysis to spectral theory will be Theorem 7. The theorem states that for every value AoEp(n the resolvent R>. TE B(X, X) on a complex Banach space X has a power series repre- sentation (4) R>.
 
 ## Cognitive Tools Reference
 
-See `.claude/skills/math-mode/SKILL.md` for full tool documentation.
+See the `math-unified` skill for the full command list, or run `uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/<script>.py" --help`.

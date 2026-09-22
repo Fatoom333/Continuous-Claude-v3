@@ -1,37 +1,44 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#     "sympy>=1.14",
+#     "z3-solver>=4.15",
+# ]
+# ///
 """Step-by-step mathematical reasoning verification - Cognitive prosthetics for Claude.
 
 USAGE:
     # Verify a single step (JSON output, default)
-    uv run python -m runtime.harness scripts/math_scratchpad.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/math_scratchpad.py" \
         verify "x = 2 implies x^2 = 4"
 
     # Verify with human-readable text output
-    uv run python -m runtime.harness scripts/math_scratchpad.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/math_scratchpad.py" \
         verify "x = 2 implies x^2 = 4" --format text
 
     # Verify with markdown output
-    uv run python -m runtime.harness scripts/math_scratchpad.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/math_scratchpad.py" \
         verify "x = 2 implies x^2 = 4" --format markdown
 
     # Verify with context
-    uv run python -m runtime.harness scripts/math_scratchpad.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/math_scratchpad.py" \
         verify "x^2 = 4" --context '{"x": 2}'
 
     # Verify a chain of reasoning
-    uv run python -m runtime.harness scripts/math_scratchpad.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/math_scratchpad.py" \
         chain --steps '["x^2 - 4 = 0", "(x-2)(x+2) = 0", "x = 2 or x = -2"]'
 
     # Verify chain with text output (step-by-step results)
-    uv run python -m runtime.harness scripts/math_scratchpad.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/math_scratchpad.py" \
         chain --steps '["x = 2", "x^2 = 4"]' --format text
 
     # Explain a step
-    uv run python -m runtime.harness scripts/math_scratchpad.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/math_scratchpad.py" \
         explain "d/dx(x^3) = 3*x^2"
 
     # Explain with text output
-    uv run python -m runtime.harness scripts/math_scratchpad.py \
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/math_scratchpad.py" \
         explain "d/dx(x^3) = 3*x^2" --format text
 
 OUTPUT FORMATS:
@@ -985,4 +992,6 @@ async def main():
 
 
 if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
     asyncio.run(main())

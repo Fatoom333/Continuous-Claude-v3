@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#     "sympy>=1.14",
+# ]
+# ///
 """Math education tutoring features - Step-by-step solutions, hints, problem generation.
 
 USAGE:
     # Generate step-by-step solution
-    uv run python scripts/math_tutor.py steps "x**2 - 5*x + 6 = 0" --operation solve
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/math_tutor.py" steps "x**2 - 5*x + 6 = 0" --operation solve
 
     # Get progressive hint
-    uv run python scripts/math_tutor.py hint "Solve x**2 - 4 = 0" --level 2
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/math_tutor.py" hint "Solve x**2 - 4 = 0" --level 2
 
     # Generate practice problem
-    uv run python scripts/math_tutor.py generate --topic algebra --difficulty 2
+    uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/math_tutor.py" generate --topic algebra --difficulty 2
 
 Features:
 - Step-by-step solutions with rule justifications
@@ -1215,4 +1221,6 @@ def main():
 
 
 if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
     main()

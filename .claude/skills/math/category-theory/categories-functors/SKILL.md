@@ -39,7 +39,7 @@ Use this skill when working on categories-functors problems in category theory.
 5. **Verify with Lean 4**
    - Compiler-in-the-loop: write proof, `lake build` checks
    - Mathlib has full category theory library
-   - See: `.claude/skills/lean4-functors/SKILL.md` for exact syntax
+   - Use the `prove` skill (Lean 4 + Mathlib) for exact syntax
 
 ## Tool Commands
 
@@ -63,4 +63,4 @@ lake build  # Compiler-in-the-loop verification
 
 ## Cognitive Tools Reference
 
-See `.claude/skills/math-mode/SKILL.md` for full tool documentation.
+See the `math-unified` skill for the full command list, or run `uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/<script>.py" --help`.

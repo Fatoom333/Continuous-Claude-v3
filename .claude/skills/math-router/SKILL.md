@@ -31,18 +31,20 @@ This skill is invoked when routing math requests to the correct CLI command. Not
 
 ```bash
 # Route any math intent to get the CLI command
-uv run python scripts/cc_math/math_router.py route "<user's math request>"
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/math_router.py" route "<request>"
 ```
 
 ## Example Workflow
 
 1. User says: "integrate sin(x) from 0 to pi"
-2. You run: `uv run python scripts/cc_math/math_router.py route "integrate sin(x) from 0 to pi"`
+2. You run: `uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/math_router.py" route "integrate sin(x) from 0 to pi"`
 3. Router returns:
    ```json
    {
-     "command": "uv run python scripts/cc_math/sympy_compute.py integrate \"sin(x)\" --var x --lower 0 --upper pi",
-     "confidence": 0.95
+     "command": "uv run --script \"$CLAUDE_OPC_DIR/scripts/cc_math/sympy_compute.py\" integrate \"sin(x)\" --var x --lower=0 --upper=pi",
+     "script": "sympy_compute.py",
+     "subcommand": "integrate",
+     "confidence": 0.755
    }
    ```
 4. You execute the returned command
@@ -71,10 +73,10 @@ uv run python scripts/cc_math/math_router.py route "<user's math request>"
 
 ```bash
 # List all available routes
-uv run python scripts/cc_math/math_router.py list
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/math_router.py" list
 
 # List routes by category
-uv run python scripts/cc_math/math_router.py list --category sympy
+uv run --script "$CLAUDE_OPC_DIR/scripts/cc_math/math_router.py" list --category sympy
 ```
 
 ## Fallback
